@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import  fetch from 'node-fetch'
 
 const app = express();
 
@@ -56,6 +57,10 @@ const router = new ethers.Contract(
 );
 
 const run = async () => {
+  let verifyStatus
+
+
+
   const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
   pairCreated.on('PairCreated', async (token0Addr, token1Addr, pairAddr, pairNums) => {
     console.log('New Pair Create detected : ', token0Addr, token1Addr, pairAddr, pairNums);
@@ -64,7 +69,6 @@ const run = async () => {
     });
 
     let pairAddress = pairAddr;
-
     if (pairAddress !== null && pairAddress !== undefined) {
       console.log("pairAddress.toString().indexOf('0x0000000000000')", pairAddress.toString().indexOf('0x0000000000000'));
       if (pairAddress.toString().indexOf('0x0000000000000') > -1) {
@@ -87,6 +91,30 @@ const run = async () => {
       if (initialLiquidityDetected === true) {
         return;
       }
+
+      let tokenAddress
+      if (token0Addr == data.WBNB){
+        tokenAddress = token1Addr
+      } else {
+        tokenAddress = token0Addr
+      }
+
+      console.log(chalk.red('Address of tokencontract is', tokenAddress));
+     
+
+      const url = 'https://api.bscscan.com/api?module=contract&action=checkverifystatus&address=' + tokenAddress + '&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
+      
+        fetch(url)
+        .then(res => res.json())
+        .then(
+          (res) => {
+            verifyStatus = res['status']
+            console.log('verifystatus : ', verifyStatus);
+          })
+      
+      
+
+      
 
 
 
