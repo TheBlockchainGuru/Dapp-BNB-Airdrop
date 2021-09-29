@@ -19,11 +19,16 @@ try {
 }
 
 
-data.WBNB    = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
-data.factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
-data.router  = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
+// data.WBNB    = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
+// data.factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
+// data.router  = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
- const mainnetUrl = 'https://bsc-dataseed.binance.org/';
+data.WBNB    = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
+data.factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
+data.router  = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+
+const mainnetUrl = 'https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
+//  const mainnetUrl = 'https://bsc-dataseed.binance.org/';
 //const mainnetUrl = 'https://dawn-shy-voice.bsc.quiknode.pro/f929e892df513a1ad658ca2046aec0768f3817e5/'
 //const mainnetUrl = 'https://mainnet.infura.io/v3/5fd436e2291c47fe9b20a17372ad8057'
 
@@ -56,28 +61,33 @@ const router = new ethers.Contract(
   account
 );
 
+
+
+
+
+
+
+
+
 const run = async () => {
-  let verifyStatus
-
-
+  let verifystate, honeyPotState
 
   const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
   pairCreated.on('PairCreated', async (token0Addr, token1Addr, pairAddr, pairNums) => {
-    console.log('New Pair Create detected : ', token0Addr, token1Addr, pairAddr, pairNums);
+    console.log(chalk.blue('New Pair Create detected : ', token0Addr, token1Addr));
     fs.appendFile('log.txt', new Date().toISOString() + ': New Pair Created ' + token0Addr + ' ' + token1Addr + ' ' + pairAddr + '\n', function (err) {
       if (err) throw err;
     });
 
     let pairAddress = pairAddr;
     if (pairAddress !== null && pairAddress !== undefined) {
-      console.log("pairAddress.toString().indexOf('0x0000000000000')", pairAddress.toString().indexOf('0x0000000000000'));
+      // console.log("pairAddress.toString().indexOf('0x0000000000000')", pairAddress.toString().indexOf('0x0000000000000'));
       if (pairAddress.toString().indexOf('0x0000000000000') > -1) {
         console.log(chalk.red(`pairAddress ${pairAddress} not detected. Restart me!`));
         return;
       }
     }
     
-
     if (token0Addr !== data.WBNB && token1Addr !== data.WBNB) {
       return;
     }
@@ -85,7 +95,6 @@ const run = async () => {
     let initialLiquidityDetected = false;
     //const pair = new ethers.Contract(pairAddress, ['event Mint(address indexed sender, uint amount0, uint amount1)'], account);
     const pair = new ethers.Contract(pairAddress, ['event Sync(uint112 reserve1, uint112 reserve2)'], account);
-
     //pair.on('Mint', async (sender, amount0, amount1) => {
     pair.on('Sync', async (amount0, amount1) => {
       if (initialLiquidityDetected === true) {
@@ -99,29 +108,59 @@ const run = async () => {
         tokenAddress = token0Addr
       }
 
-      console.log(chalk.red('Address of tokencontract is', tokenAddress));
-     
+      console.log(chalk.greenBright('Address of tokencontract is', tokenAddress));
+      console.log('verify checking...')
 
-      const url = 'https://api.bscscan.com/api?module=contract&action=checkverifystatus&address=' + tokenAddress + '&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
-      
+      const url = 'https://api.bscscan.com/api?module=contract&action=checkverifystate&address=' + tokenAddress + '&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
         fetch(url)
         .then(res => res.json())
         .then(
           (res) => {
-            verifyStatus = res['status']
-            console.log('verifystatus : ', verifyStatus);
+            verifystate = res['status']
+            console.log('verifystate : ', verifystate);
+            if (verifystate == '0'){
+              console.log(chalk.red(" contract is not verfied"))
+              return;
+            } else{
+              console.log(chalk.greenBright(" contract is verfied"))
+            }
           })
-      
-      
-
-      
 
 
+      let tokenAmountTest = await router.getAmountsOut(1000000000, [data.WBNB, tokenAddress]);
+      const tx = await router.swapExactETHForTokens(
+        tokenAmountTest,
+        [data.WBNB, tokenAddress],
+        data.recipient,
+        Date.now() + 1000 * 60 * 10, //10 minutes
+        {
+          'gasLimit': data.gasLimit,
+          'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
+          'value': 1000000000
+        }).catch((err) => {
+          honeyPotState = 0
+          console.log(chalk.red(" this contract is honeypot"))
+          return;
+        })
+
+        tx = await router.swapExactTokensForETH(
+          tokenAmountTest,
+          0,
+          [tokenAddress, data.WBNB],
+          data.recipient,
+          Date.now() + 1000 * 60 * 10, //10 minutes
+          {
+            'gasLimit': data.gasLimit,
+            'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
+          }).catch((err) => {
+            honeyPotState = 0
+            console.log(chalk.red(" this contract is honeypot"))
+            return;
+          });
 
       initialLiquidityDetected = true;
       const tokenIn = data.WBNB;
       const tokenOut = (token0Addr === data.WBNB) ? token1Addr : token0Addr;
-
 
       //We buy x amount of the new token for our wbnb
       const amountIn = ethers.utils.parseUnits(`${data.AMOUNT_OF_WBNB}`, 'ether');
