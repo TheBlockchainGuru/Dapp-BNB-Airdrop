@@ -22,9 +22,9 @@ try {
 // data.factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 // data.router  = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
-data.WBNB    = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
-data.factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
-data.router  = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+// data.WBNB    = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
+// data.factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
+// data.router  = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 
 const mainnetUrl = 'https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
 //  const mainnetUrl = 'https://bsc-dataseed.binance.org/';
@@ -69,7 +69,10 @@ const router = new ethers.Contract(
 
 
 const run = async () => { 
-  let verifystate, checkingState,  capturestate = 1
+  
+  let checkingState
+  let capturestate = 1
+  let tokenAddress
 
   const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
   pairCreated.on('PairCreated', async (token0Addr, token1Addr, pairAddr, pairNums) => {
@@ -92,7 +95,6 @@ const run = async () => {
       }
     }
 
-    
     if (token0Addr !== data.WBNB && token1Addr !== data.WBNB) {
       console.log(chalk.red("it isn't bnb pair!!"))
       return;
@@ -104,16 +106,14 @@ const run = async () => {
     const pair = new ethers.Contract(pairAddress, ['event Sync(uint112 reserve1, uint112 reserve2)'], account);
     //pair.on('Mint', async (sender, amount0, amount1) => {
     pair.on('Sync', async (amount0, amount1) => {
-
       if (capturestate == 1 ){
         capturestate = 0
-
         if (initialLiquidityDetected === true) {
           console.log("initial liquidity detected")
           return;
         }
 
-        let tokenAddress
+        
         if (token0Address == data.WBNB){
           tokenAddress = token1Address
         }
@@ -125,19 +125,22 @@ const run = async () => {
 
         //-----------------checking verify state
         console.log(tokenAddress,'verify checking...')
-        const url = 'https://api-kovan.etherscan.io/api?module=contract&action=getsourcecode&address='+ tokenAddress + '&apikey=13ZWB49WY6KJZPVYBUN58VUBMTZZMNCJBP'
+        
+        const url = 'https://api-kovan.etherscan.io/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=13ZWB49WY6KJZPVYBUN58VUBMTZZMNCJBP';
           fetch(url)
           .then(res => res.json())
           .then(
             (res) => {
               if (res['result']['0']['ABI'] == "Contract source code not verified"){
-                verifystate = false;
+                checkingState = false
                 console.log(chalk.red("[FAIL]___contract isn't verified"))
               } 
               else if (res['result']['0']['SourceCode'].includes('mint')){
+                checkingState = false
                 console.log(chalk.red("[FAIL]___contract has mint funciton enabled."))
               }
               else if (res['result']['0']['SourceCode'].includes('function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool)')) {
+                checkingState = false
                 console.log(chalk.red("[FAIL]___contract is a honeypot."))
               }
               else {
@@ -146,7 +149,8 @@ const run = async () => {
               }
             })
 
-        initialLiquidityDetected = true;
+        if(checkingState == true){
+          initialLiquidityDetected = true;
         const tokenIn = data.WBNB;
         const tokenOut = (token0Addr === data.WBNB) ? token1Addr : token0Addr;
   
@@ -236,7 +240,21 @@ const run = async () => {
           await tx_sell.wait();
   
           }
+
         }
+
+        
+  
+      
+
+      
+
+
+     
+
+        }
+
+
     });
   })
 }
