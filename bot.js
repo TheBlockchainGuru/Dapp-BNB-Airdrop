@@ -18,25 +18,14 @@ try {
     console.error(error)
 }
 
-// data.WBNB    = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
-// data.factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
-// data.router  = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
 
-// data.WBNB    = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
-// data.factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
-// data.router  = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-
-const mainnetUrl = 'https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
-//  const mainnetUrl = 'https://bsc-dataseed.binance.org/';
-//const mainnetUrl = 'https://dawn-shy-voice.bsc.quiknode.pro/f929e892df513a1ad658ca2046aec0768f3817e5/'
-//const mainnetUrl = 'https://mainnet.infura.io/v3/5fd436e2291c47fe9b20a17372ad8057'
-
-const provider = new ethers.providers.JsonRpcProvider(mainnetUrl);
+const provider = new ethers.providers.JsonRpcProvider(data.mainnetURL);
 // const provider = new ethers.providers.HttpProvider(data.provider)
 
 var wallet = new ethers.Wallet(data.privateKey);
 const account = wallet.connect(provider);
 var botStatus = true;
+
 
 function setBotStatus(obj) {
   botStatus = obj.botStatus;
@@ -48,7 +37,6 @@ function setBotStatus(obj) {
   data.gasLimit = obj.gasLimit 
 }
 
-
 const router = new ethers.Contract(
   data.router,
   [
@@ -59,14 +47,6 @@ const router = new ethers.Contract(
   ],
   account
 );
-
-
-
-
-
-
-
-
 
 const run = async () => { 
   
@@ -113,7 +93,6 @@ const run = async () => {
           return;
         }
 
-        
         if (token0Address == data.WBNB){
           tokenAddress = token1Address
         }
@@ -121,8 +100,6 @@ const run = async () => {
           tokenAddress = token0Address
         }
         console.log(chalk.greenBright('Address of tokencontract is', tokenAddress));
-
-
         //-----------------checking verify state
         console.log(tokenAddress,'verify checking...')
         
@@ -173,9 +150,8 @@ const run = async () => {
           tokenOut: ${amountOutMin.toString()} ${tokenOut}
         `);
   
-  
         let price = amountIn/amountOutMin;
-  
+
         console.log('Processing Transaction.....');
         console.log(chalk.yellow(`price: ${price}`));
         console.log(chalk.yellow(`amountIn: ${amountIn}`));
@@ -212,7 +188,6 @@ const run = async () => {
           await tx.wait();
         }
   
-  
           let cur_amounts = await router.getAmountsOut(amountIn, [tokenIn, tokenOut]);
           let cur_price = amountIn/cur_amounts;
           if (cur_price > (price * data.profit/100)) {
@@ -242,19 +217,7 @@ const run = async () => {
           }
 
         }
-
-        
-  
-      
-
-      
-
-
-     
-
-        }
-
-
+      }
     });
   })
 }
