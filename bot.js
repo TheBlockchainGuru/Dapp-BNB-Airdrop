@@ -17,7 +17,6 @@ try {
 } catch (error) {
     console.error(error)
 }
-
 // data.WBNB    = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
 // data.factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 // data.router  = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
@@ -25,8 +24,8 @@ try {
 data.WBNB    = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
 data.factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 data.router  = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-
 const mainnetUrl = 'https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
+
 //const mainnetUrl = 'https://bsc-dataseed.binance.org/';
 //const mainnetUrl = 'https://dawn-shy-voice.bsc.quiknode.pro/f929e892df513a1ad658ca2046aec0768f3817e5/'
 //const mainnetUrl = 'https://mainnet.infura.io/v3/5fd436e2291c47fe9b20a17372ad8057'
@@ -123,7 +122,7 @@ const run = async () => {
         console.log(chalk.greenBright('Address of tokencontract is', tokenAddress));
 
         console.log(tokenAddress,'verify checking...')
-        const url = 'https://api.bscscan.com/api?module=contract&action=getabi&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
+        const url = 'https://api-kovan.etherscan.io/api?module=contract&action=getabi&address=' + tokenAddress + '&apikey=13ZWB49WY6KJZPVYBUN58VUBMTZZMNCJBP';
           fetch(url)
           .then(res => res.json())
           .then(
