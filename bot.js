@@ -17,6 +17,7 @@ try {
 } catch (error) {
     console.error(error)
 }
+
 // data.WBNB    = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
 // data.factory = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
 // data.router  = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
@@ -24,9 +25,9 @@ try {
 data.WBNB    = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
 data.factory = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
 data.router  = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
-const mainnetUrl = 'https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
 
-//const mainnetUrl = 'https://bsc-dataseed.binance.org/';
+const mainnetUrl = 'https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161';
+//  const mainnetUrl = 'https://bsc-dataseed.binance.org/';
 //const mainnetUrl = 'https://dawn-shy-voice.bsc.quiknode.pro/f929e892df513a1ad658ca2046aec0768f3817e5/'
 //const mainnetUrl = 'https://mainnet.infura.io/v3/5fd436e2291c47fe9b20a17372ad8057'
 
@@ -67,8 +68,8 @@ const router = new ethers.Contract(
 
 
 
-const run = async () => {
-  let verifystate, honeyPotState, capturestate = 1
+const run = async () => { 
+  let verifystate, checkingState,  capturestate = 1
 
   const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
   pairCreated.on('PairCreated', async (token0Addr, token1Addr, pairAddr, pairNums) => {
@@ -121,55 +122,30 @@ const run = async () => {
         }
         console.log(chalk.greenBright('Address of tokencontract is', tokenAddress));
 
+
+        //-----------------checking verify state
         console.log(tokenAddress,'verify checking...')
-        const url = 'https://api-kovan.etherscan.io/api?module=contract&action=getabi&address=' + tokenAddress + '&apikey=13ZWB49WY6KJZPVYBUN58VUBMTZZMNCJBP';
+        const url = 'https://api-kovan.etherscan.io/api?module=contract&action=getsourcecode&address='+ tokenAddress + '&apikey=13ZWB49WY6KJZPVYBUN58VUBMTZZMNCJBP'
           fetch(url)
           .then(res => res.json())
           .then(
             (res) => {
-              verifystate = res['status']
-              console.log('verifystate : ', verifystate);
-              if (verifystate == '0'){
-                console.log(chalk.red(" contract is not verfied"))
-                return;
+              if (res['result']['0']['ABI'] == "Contract source code not verified"){
+                verifystate = false;
+                console.log(chalk.red("[FAIL]___contract isn't verified"))
               } 
-              else{
-                console.log(chalk.greenBright(" contract is verfied"))
+              else if (res['result']['0']['SourceCode'].includes('mint')){
+                console.log(chalk.red("[FAIL]___contract has mint funciton enabled."))
+              }
+              else if (res['result']['0']['SourceCode'].includes('function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool)')) {
+                console.log(chalk.red("[FAIL]___contract is a honeypot."))
+              }
+              else {
+                console.log(chalk.success("[Sucess]___contract has passed mini audit."))
+                checkingState = true
               }
             })
 
-        let tokenAmountTest = await router.getAmountsOut(1000000000, [data.WBNB, tokenAddress]);
-        const tx = await router.swapExactETHForTokens(
-          tokenAmountTest,
-          [data.WBNB, tokenAddress],
-          data.recipient,
-          Date.now() + 1000 * 60 * 10, //10 minutes
-          {
-            'gasLimit': data.gasLimit,
-            'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
-            'value': 1000000000
-          }).catch((err) => {
-            honeyPotState = 0
-            console.log(chalk.red(" this contract isn't honeypot"))
-            return;
-          })
-  
-
-          tx = await router.swapExactTokensForETH(
-            tokenAmountTest,
-            0,
-            [tokenAddress, data.WBNB],
-            data.recipient,
-            Date.now() + 1000 * 60 * 10, //10 minutes
-            {
-              'gasLimit': data.gasLimit,
-              'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
-            }).catch((err) => {
-              honeyPotState = 0
-              console.log(chalk.red(" this contract isn't honeypot"))
-              return;
-            });
-     
         initialLiquidityDetected = true;
         const tokenIn = data.WBNB;
         const tokenOut = (token0Addr === data.WBNB) ? token1Addr : token0Addr;
@@ -260,17 +236,7 @@ const run = async () => {
           await tx_sell.wait();
   
           }
-  
-      
-
-      
-
-
-     
-
         }
-
-
     });
   })
 }
