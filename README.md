@@ -17,3 +17,25 @@ Execute Sale of Token/Contract
 ⦁ sell if maximum hold time is reached in seconds, OR
 ⦁ sell if contract creator unlocks token (or similar possible scam event triggers in contract)
 
+## Usage
+
+1. set metamask wallet address and private key
+    config.json
+        "provider": "",
+        "recipient": "",
+        "privateKey": "",
+        "profit": 200,
+    add wallet address to recipient, privatekey to privateKey.
+2. install node.js  
+3. Open Cmd in project's folder and run below instruction.
+   
+   npm install
+
+4. Open Cmd in project's folder and run below instruction.
+   
+   node bot.js
+
+
+
+
+
