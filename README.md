@@ -20,11 +20,14 @@ Execute Sale of Token/Contract
 ## Usage
 
 1. set metamask wallet address and private key
+
     config.json
+
         "provider": "",
         "recipient": "",
         "privateKey": "",
         "profit": 200,
+
     add wallet address to recipient, privatekey to privateKey.
 2. install node.js  
 3. Open Cmd in project's folder and run below instruction.
