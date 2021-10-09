@@ -2,9 +2,7 @@ import http from 'http';
 import ethers from 'ethers';
 import express from 'express';
 import chalk from 'chalk';
-import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import  fetch from 'node-fetch'
 
 const app = express();
