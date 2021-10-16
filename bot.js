@@ -92,7 +92,7 @@ const run = async () => {
 //==============================================================================================================
 //============================================== token checking ===============================================
 
-        checkingState =  await checkToken(tokenAddress)
+        checkingState =  await checkToken(tokenAddress, true, true, true, true, true, true)
 //==============================================================================================================
 //============================================== Buy and Sell ================================================
 
@@ -113,7 +113,7 @@ const run = async () => {
   })
 }
 
-  const checkToken = async (tokenAddress)=>{
+  const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, liqudityLockCheck, honeypotCheck, taxCheck)=>{
   let checkingverify = true
   let checkingState = true
   const url = 'https://api.bscscan.com/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
@@ -122,7 +122,7 @@ const run = async () => {
           .then(
             async (res) => {
               //-----------------checking verify state
-              if (data.verifyset) {
+              if (veryfyCheck) {
                 console.log(chalk.yellow('\n Step 1 : verify checking result : '))
                 if (res['result']['0']['ABI'] == "Contract source code not verified") {
                   checkingState = false
@@ -134,7 +134,7 @@ const run = async () => {
               }
 
               //-----------------checking mint state
-              if (data.mintset) {
+              if (mintCheck) {
                 console.log(chalk.yellow('\n Step 2 : mint flag checking result : '))
                 if (checkingverify) {
                   if (res['result']['0']['SourceCode'].includes('mint')) {
@@ -149,7 +149,7 @@ const run = async () => {
               }
             })
         //-----------------checking renounce state    
-        if (data.renounceset) {
+        if (renounceCheck) {
           console.log(chalk.yellow('\n Step 3 : Token owner  renounce checking result : '))
           try {
             let tokenContract = new ethers.Contract(
@@ -207,7 +207,7 @@ const run = async () => {
           }
         }
         //-----------------checking liquidity  state  
-        if (data.liqudityset) {
+        if (liqudityLockCheck) {
           console.log(chalk.yellow('\n Step 4 : Liqudity Lock Check result : '))
           const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenAddress + '&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
           await fetch(url)
@@ -215,15 +215,15 @@ const run = async () => {
             .then(
               (res) => {
                 if (res['result'] > 0) {
-                  checkingState = false
-                  console.log(chalk.red("  [BAD]___contract is liquidity locked"))
+                  console.log(chalk.green("  [OK]___contract is liquidity locked")) 
                 } else {
-                  console.log(chalk.green("  [OK]___contract is not locked"))
+                  checkingState = false
+                  console.log(chalk.red("  [BAD]___contract is not locked"))
                 }
-          })
+              })
         }
         //-----------------checking honeypot state and tax fee             
-        if (data.honeypotset) {
+        if (honeypotCheck) {
           console.log(chalk.yellow('\n Step 5 : HoneyPot checking result : '))
             let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
             await fetch(honeypot_url)
@@ -239,7 +239,7 @@ const run = async () => {
          })
        }
         //---------------------- checking tax state        
-        if (data.taxset) {
+        if (taxCheck) {
           console.log(chalk.yellow('\n Step 6 : Check tax fee result'))
           let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
           await fetch(honeypot_url)
@@ -374,9 +374,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
 }
 const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
   console.log("\n=========================start catching opportunity for sell ===========================")
-
   let flag = false
-
   let cur_amounts = await router.getAmountsOut(amountIn, [data.WBNB, tokenIn]);
   let cur_price = amountIn / cur_amounts[1];
 
@@ -389,7 +387,6 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
     console.log("   sell price check result : NO")
   }
 
-
   console.log (chalk.yellow("\n checking hold time"))
   if(Math.round(+new Date()/1000) >= time + data.MaxHoldTime) {
     flag = true
@@ -398,17 +395,15 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
     console.log("Hold time is not reached")
   }
 
-
   console.log (chalk.yellow("\n checking Token status"))
-  let tokenState = await checkToken(tokenIn)
+  let tokenState = await checkToken(tokenIn, false, false, true, true, false, false)
   if(tokenState  == true){
     console.log("Token checking result : OK")
   } else {
     flag = true
     console.log("Token Checking result : Bad, Bot will sell token ")
   }
-
-
+ 
   if(flag){
     if (transactionState == true) {
       transactionState = false
