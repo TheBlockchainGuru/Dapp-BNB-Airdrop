@@ -378,6 +378,7 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
   let cur_amounts = await router.getAmountsOut(amountIn, [data.WBNB, tokenIn]);
   let cur_price = amountIn / cur_amounts[1];
 
+
   console.log (chalk.yellow("\n checking price profit"))
   if (cur_price > (price * data.profit / 100)) 
   {
@@ -387,6 +388,7 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
     console.log("   sell price check result : NO")
   }
 
+
   console.log (chalk.yellow("\n checking hold time"))
   if(Math.round(+new Date()/1000) >= time + data.MaxHoldTime) {
     flag = true
@@ -395,15 +397,24 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
     console.log("Hold time is not reached")
   }
 
+
   console.log (chalk.yellow("\n checking Token status"))
-  let tokenState = await checkToken(tokenIn, false, false, true, true, false, false)
-  if(tokenState  == true){
+  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, true, false, false)
+  if(LiqudityCheckState  == true){
+  } else {
+    flag = true
+    console.log("Liquidity is unlocked, bot will sell token")
+  }
+
+  console.log (chalk.yellow("\n checking Token Scam checker"))
+  let ScamCheckState = await checkToken(tokenIn, false, false, true, false, false, false)
+  if(ScamCheckState  == true){
     console.log("Token checking result : OK")
   } else {
     flag = true
-    console.log("Token Checking result : Bad, Bot will sell token ")
+    console.log("It is seems that token is scam, bot will sell token")
   }
- 
+
   if(flag){
     if (transactionState == true) {
       transactionState = false
@@ -447,11 +458,9 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
         
       }, data.traficInterval);
     }
-       
   } else {
     setTimeout(() =>sell(tokenIn, amountIn, amountOutMin, price, time)
     , data.captureTimeInverval);
-
   }
 }
 buy('0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',12345678946113123123)
