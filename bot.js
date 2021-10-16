@@ -4,11 +4,16 @@ import express from 'express';
 import chalk from 'chalk';
 import fs from 'fs';
 import fetch from 'node-fetch'
+import { clearInterval } from 'timers';
 
 
 const app = express();
 const httpServer = http.createServer(app);
 var data;
+
+
+
+
 
 try {
   data = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
@@ -84,14 +89,18 @@ const run = async () => {
 
         console.log('\n checking token contract...  address is ', tokenAddress)
 
-        checkingState = checkToken(tokenAddress)
+        
+
 //==============================================================================================================
 //============================================== token checking ===============================================
+
+        checkingState =  await checkToken(tokenAddress)
 //==============================================================================================================
 //============================================== Buy and Sell ================================================
 
         //------------------------run for buy & sell
         if (checkingState) {
+          captureID += 1;
           console.log(chalk.green("\n\n  [CHECKING RESULT : GOOD]"))
           initialLiquidityDetected = true;
           capturestate = true
@@ -108,8 +117,8 @@ const run = async () => {
   })
 }
 
-const checkToken = async (tokenAddress)=>{
 
+const checkToken = async (tokenAddress)=>{
   let checkingverify = true
   let checkingState = true
   const url = 'https://api.bscscan.com/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
@@ -258,12 +267,13 @@ const checkToken = async (tokenAddress)=>{
 }
 
 const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
+  
   const tokenIn = data.WBNB;
   const tokenOut = tokenAddress;
-  
   let   walletBalance;
   let   amountIn
   walletBalance = parseInt(await provider.getBalance(data.recipient + '')) ;
+
 //==================check mode and balance
   if(data.buyMode == 'FIXED_MODE') {
     if (walletBalance < data.AMOUNT_OF_WBNB * 1000000000000000000){
@@ -293,8 +303,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
 
 //=============================================================================
   const amountOutMin =  amounts[1] * data.Slippage/ 100;
-
-  console.log(chalk.green.inverse(`\n Buy token`));
+  console.log(chalk.green.inverse(`\n ======================Buying tokens=======================`));
   console.log( "\n this is ", data.buyMode," will buy", amountOutMin ,"token with ", amountIn/1000000000000000000,"BNB" )
   
   
@@ -326,29 +335,24 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                       console.log(chalk.green("Approve success"))
                                                       await approve.wait();
                                                       let time = Math.round(+new Date()/1000);
-                                                      console.log(time)
                                                       sell(tokenAddress, amountIn, amountOutMin, price, time)
-
   }
 }
 
 const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
- 
-  console.log("\n start to sell")
+  console.log("\n=========================start catching opportunity for sell ===========================")
 
   let flag = false
-
   let cur_amounts = await router.getAmountsOut(amountIn, [data.WBNB, tokenIn]);
   let cur_price = amountIn / cur_amounts[1];
   console.log (chalk.yellow("\n checking price profit"))
-  if (cur_price > (price * data.profit / 100)) 
-  {
-    console.log("   sell price check result : OK, Bot will sell token.")
-    flag = true
-  } else {
-    console.log("   sell price check result : NO")
-  }
-
+  // if (cur_price > (price * data.profit / 100)) 
+  // {
+  //   console.log("   sell price check result : OK, Bot will sell token.")
+  //   flag = true
+  // } else {
+  //   console.log("   sell price check result : NO")
+  // }
   console.log (chalk.yellow("\n checking hold time"))
   if(Math.round(+new Date()/1000) >= time + data.MaxHoldTime) {
     flag = true
@@ -356,22 +360,17 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
   } else {
     console.log("   sell price check result : NO")
   }
-
-
-  console.log (chalk.yellow("\n checking Token status"))
-  let tokenState = await checkToken(tokenIn)
-
-  if(tokenState  == true){
-    flag = false
-    console.log("Token checking result : OK")
-  } else {
-    flag = true
-    console.log("Token Checking result : Bad, Bot will sell token ")
-  }
-
-
+  // console.log (chalk.yellow("\n checking Token status"))
+  // let tokenState = await checkToken(tokenIn)
+  // if(tokenState  == true){
+  //   flag = false
+  //   console.log("Token checking result : OK")
+  // } else {
+  //   flag = true
+  //   console.log("Token Checking result : Bad, Bot will sell token ")
+  // }
   if(flag){
-       console.log(chalk.green.inverse(`\n Selling tokens`));
+       console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
        const tx_sell = await router.swapExactTokensForETH(
         ethers.BigNumber.from(amountOutMin+ ''),
         0,
@@ -387,10 +386,16 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
       });
       flag = false;
       await tx_sell.wait();
-      console.log("success")
+      console.log("sell success")
+  } else {
+    setTimeout(() =>sell(tokenIn, amountIn, amountOutMin, price, time)
+    , data.captureTimeInverval);
+
   }
 }
 
-buy('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 10000000000000000);
+
+
+run();
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
