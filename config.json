@@ -1,15 +1,30 @@
 {
-  "provider": "",
-  "recipient": "0x65F8f6f98d98e077E55483241757BE475Ab328BC",
-  "privateKey": "ceec75407e80fdcbbb3c9061fb46519cdfff028c0b4b54da7cc49fa189650a3b",
-  "profit": 200,
-  "AMOUNT_OF_WBNB": 0.00002,
-  "Slippage": 100,
-  "gasPrice": 5,
-  "gasLimit": 345684,
+  "recipient": "0x76bD076f18b926407ce1473BBa4c77C047B10FC8",
+  "privateKey": "086c236291f8053647cf69cdf5fa01a334c2967454d19b1599334a7e58c1dfa5",
+  
+  
+ 
   "WBNB": "0xd0A1E359811322d97991E03f863a0C30C2cF029C",
   "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
   "router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-  "mainnetURL" : "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+  "mainnetURL": "https://kovan.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161",
 
+  
+  "verifyset": false,  
+  "honeypotset": false,
+  "mintset": false,
+  "taxset": false,
+  "renounceset": false,
+  "liqudityset": false,
+
+  "buyMode" : "FIXED_MODE",
+ 
+  "AMOUNT_OF_WBNB": 0.00002,
+  "PERCENT_OF_WBNB" : 0.0000001,
+  "Slippage": 100,
+  "profit": 90,
+  "gasPrice": 5,
+  "gasLimit": 345684,
+  "logo" : "\n\n██████╗ ███████╗ ██████╗    ████████╗ ██████╗ ██╗  ██╗███████╗███╗   ██╗    ███████╗███╗   ██╗██╗██████╗ ███████╗██████╗ \n██╔══██╗██╔════╝██╔════╝    ╚══██╔══╝██╔═══██╗██║ ██╔╝██╔════╝████╗  ██║    ██╔════╝████╗  ██║██║██╔══██╗██╔════╝██╔══██╗\n██████╔╝███████╗██║            ██║   ██║   ██║█████╔╝ █████╗  ██╔██╗ ██║    ███████╗██╔██╗ ██║██║██████╔╝█████╗  ██████╔╝\n██╔══██╗╚════██║██║            ██║   ██║   ██║██╔═██╗ ██╔══╝  ██║╚██╗██║    ╚════██║██║╚██╗██║██║██╔═══╝ ██╔══╝  ██╔══██╗\n██████╔╝███████║╚██████╗       ██║   ╚██████╔╝██║  ██╗███████╗██║ ╚████║    ███████║██║ ╚████║██║██║     ███████╗██║  ██║\n╚═════╝ ╚══════╝ ╚═════╝       ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝    ╚══════╝╚═╝  ╚═══╝╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝\n\n\nListening for new Create pair & add liqudity token..."
 }
+ 

@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import fetch from 'node-fetch'
 
+
 const app = express();
 const httpServer = http.createServer(app);
 var data;
@@ -44,6 +45,7 @@ const router = new ethers.Contract(
 const run = async () => {
   let capturestate = true
   let tokenAddress
+  let Liqudity_BNB_AMOUNT
   var checkingState = true
   var checkingverify = true
   const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
@@ -76,6 +78,7 @@ const run = async () => {
         }
 
         token0Addr == data.WBNB ? tokenAddress = token1Addr : tokenAddress = token0Addr
+        token0Addr == data.WBNB ? Liqudity_BNB_AMOUNT = amount1 : Liqudity_BNB_AMOUNT = amount0
 
         console.log(chalk.greenBright("\nAdd Liqudity Detected Token Address :", tokenAddress));
 
@@ -188,7 +191,7 @@ const run = async () => {
                 } else {
                   console.log(chalk.green("  [OK]___contract is not locked"))
                 }
-              })
+          })
         }
         //-----------------checking honeypot state and tax fee             
         if (data.honeypotset) {
@@ -235,7 +238,7 @@ const run = async () => {
           initialLiquidityDetected = true;
           capturestate = true
           console.log()
-          trading(tokenAddress)
+          buy(tokenAddress, Liqudity_BNB_AMOUNT)
         } 
         else {
           console.log(chalk.red("\n\n  [CHECKING RESULT : BAD]"))
@@ -248,24 +251,54 @@ const run = async () => {
 }
 
 
-const trading = async(tokenAddress) => {
+
+
+const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   const tokenIn = data.WBNB;
   const tokenOut = tokenAddress;
-  //We buy x amount of the new token for our wbnb
+  
+  let   walletBalance;
+  let   amountIn
+  walletBalance = parseInt(await provider.getBalance(data.recipient + '')) ;
 
-  const amountIn = ethers.utils.parseUnits(`${data.AMOUNT_OF_WBNB}`, 'ether');
+//==================check mode and balance
+
+  if(data.buyMode == 'FIXED_MODE') {
+    if (walletBalance < data.AMOUNT_OF_WBNB * 1000000000000000000){
+      console.log(chalk.red("Please check wallet balance"))
+      return 
+    } 
+    else {
+      amountIn =  ethers.BigNumber.from(data.AMOUNT_OF_WBNB * 1000000000000000000)
+      console.log(chalk.green("there is enough balance")) 
+    }
+  } 
+
+  else if (data.buyMode == 'PERCENT_MODE'){
+    if (walletBalance < Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01){
+      console.log(chalk.red("Please check wallet balance"))
+      return 
+    } else {
+      console.log(Liqudity_BNB_AMOUNT)
+      amountIn = ethers.BigNumber.from(parseInt(Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01)+'')
+      console.log(chalk.green("there is enough balance")) 
+    }
+  } else {
+    console.log(chalk.red("please check buy mode variable."))
+  }
 
   const amounts = await router.getAmountsOut(amountIn, [tokenIn, tokenOut]);
-  //Our execution price will be a bit different, we need some flexbility
-  const amountOutMin = amounts[1].sub(amounts[1].mul(`${data.Slippage}`).div(100));
-  //const amountOutMin = amounts[1].sub(amounts[1].div(`${data.Slippage}`)); 
+
+//=============================================================================
+  const amountOutMin =  amounts[1] * data.Slippage/ 100;
+
   console.log(chalk.green.inverse(`\n Buy token`));
-  let price = amountIn / amountOutMin;
-
-  console.log('Processing Transaction.....');
+  console.log( "this is ", data.buyMode," will buy", amountOutMin ,"token with ", amountIn/1000000000000000000,"BNB" )
   
+  
+  let price = amountIn / amountOutMin;
+  console.log('Processing Transaction.....');
   if (botStatus === true) {
-
     const tx = await router.swapExactETHForTokens(
       amountOutMin,
       [tokenIn, tokenOut],
@@ -278,9 +311,10 @@ const trading = async(tokenAddress) => {
       }).catch((err) => {
       console.log('BUY token failed...')
     });
+    console.log("Buy success")
     await tx.wait();
-
-    const tokenContract = new etheres.Contract(tokenAddress, ['function approve(address spenderYHOT, uint tokens) public virtual returns (bool success)'], account)
+   
+    const tokenContract = new ethers.Contract(tokenAddress, ['function approve(address spenderYHOT, uint tokens) public virtual returns (bool success)'], account)
     const approve       = await tokenContract.approve(data.router, ethers.BigNumber.from('0xffffffffffffffff'), 
                                                       {
                                                         'gasLimit': data.gasLimit,
@@ -288,37 +322,46 @@ const trading = async(tokenAddress) => {
                                                       }).catch((err) => {
                                                         console.log('Token Approve failed...')
                                                       });
+                                                      console.log("Approve success")
                                                       await approve.wait();
+                                                      sell(tokenAddress, amountIn, amountOutMin, price)
   }
+}
 
+
+
+const sell = async (tokenIn, amountIn, amountOutMin, price) => {
+  console.log("start to sell")
   let flag = true
-  while(flag){
-    let cur_amounts = await router.getAmountsOut(amountIn, [tokenIn, tokenOut]);
-    let cur_price = amountIn / cur_amounts;
+  if(flag){
+    let cur_amounts = await router.getAmountsOut(amountIn, [data.WBNB, tokenIn]);
+    let cur_price = amountIn / cur_amounts[1];
+    console.log(cur_price, price, amountOutMin)
     if (cur_price > (price * data.profit / 100)) 
     {
        console.log(chalk.green.inverse(`\n Selling tokens`));
-      const tx_sell = await router.swapExactTokensForETH(
-        amountOutMin,
+       const tx_sell = await router.swapExactTokensForETH(
+        ethers.BigNumber.from(amountOutMin+ ''),
         0,
-        [tokenOut, tokenIn],
+        [tokenIn, data.WBNB],
         data.recipient,
         Date.now() + 1000 * 60 * 10, //10 minutes
         {
           'gasLimit': data.gasLimit,
-          'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
-          'value': "0"
+          'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei')
         }).catch((err) => {
+        console.log(err)
         console.log('transaction failed...')
       });
       flag = false;
       await tx_sell.wait();
-    } else {
-      sleep(2000);
+      console.log("success")
     }
   }
 }
-  
-run();
+
+
+buy('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', 10000000000000000);
 const PORT = 5000;
+
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
