@@ -17,12 +17,12 @@
   "renounceset": false,
   "liqudityset": false,
 
-  "buyMode" : "FIXED_MODE",
+  "buyMode" : "PERCENT_MODE",
  
   "AMOUNT_OF_WBNB": 0.00002,
   "PERCENT_OF_WBNB" : 0.0000001,
   "Slippage": 100,
-  "profit": 120,
+  "profit": 90,
   "gasPrice": 5,
   "gasLimit": 345684,
   "MaxHoldTime" : 50,

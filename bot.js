@@ -290,8 +290,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       console.log(chalk.red("Please check wallet balance"))
       return 
     } else {
-      console.log(Liqudity_BNB_AMOUNT)
-      amountIn = ethers.BigNumber.from(parseInt(Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01)+'')
+      amountIn = ethers.BigNumber.from(parseInt(Math.round(Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01))+'')
+      console.log(amountIn)
       console.log(chalk.green("there is enough balance")) 
     }
   } else {
@@ -322,8 +322,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
           console.log(err)
           console.log(chalk.red('\nBUY token failed...'))
       });
-      console.log(chalk.green("\n Buy success"))
       await tx.wait();
+      console.log(chalk.green("\n Buy success"))
      
       const tokenContract = new ethers.Contract(tokenAddress, ['function approve(address spenderYHOT, uint tokens) public virtual returns (bool success)'], account)
       const approve       = await tokenContract.approve(data.router, ethers.BigNumber.from('0xffffffffffffffff'), 
@@ -333,8 +333,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                         }).catch((err) => {
                                                           console.log(chalk.red('Token Approve failed...'))
                                                         });
-                                                        console.log(chalk.green("Approve success"))
                                                         await approve.wait();
+                                                        console.log(chalk.green("Approve success"))
                                                         let time = Math.round(+new Date()/1000);
                                                         sell(tokenAddress, amountIn, amountOutMin, price, time)
                                                         transactionState = true
@@ -355,9 +355,10 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
           console.log(err)
           console.log(chalk.red('\nBUY token failed...'))
       });
-      console.log(chalk.green("\n Buy success"))
+
       await tx.wait();
-     
+      console.log(chalk.green("\n Buy success"))
+
       const tokenContract = new ethers.Contract(tokenAddress, ['function approve(address spenderYHOT, uint tokens) public virtual returns (bool success)'], account)
       const approve       = await tokenContract.approve(data.router, ethers.BigNumber.from('0xffffffffffffffff'), 
                                                         {
@@ -366,8 +367,9 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                         }).catch((err) => {
                                                           console.log(chalk.red('Token Approve failed...'))
                                                         });
-                                                        console.log(chalk.green("Approve success"))
+                                                        
                                                         await approve.wait();
+                                                        console.log(chalk.green("Approve success"))
                                                         let time = Math.round(+new Date()/1000);
                                                         sell(tokenAddress, amountIn, amountOutMin, price, time)
                                                         transactionState = true
@@ -462,7 +464,7 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
 
   }
 }
-buy('0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',100000)
-setTimeout(() => buy('0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', 100000), 3000);  
+buy('0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',12345678946113123123)
+setTimeout(() => buy('0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', 12345678946113123123), 7000);  
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
