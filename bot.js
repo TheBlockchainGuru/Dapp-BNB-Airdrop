@@ -123,7 +123,7 @@ const run = async () => {
             async (res) => {
               //-----------------checking verify state
               if (veryfyCheck) {
-                console.log(chalk.yellow('\n Step 1 : verify checking result : '))
+                console.log(chalk.yellow('\n [Token Checking] : verify checking result : '))
                 if (res['result']['0']['ABI'] == "Contract source code not verified") {
                   checkingState = false
                   checkingverify = false
@@ -135,7 +135,7 @@ const run = async () => {
 
               //-----------------checking mint state
               if (mintCheck) {
-                console.log(chalk.yellow('\n Step 2 : mint flag checking result : '))
+                console.log(chalk.yellow('\n [Token Checking] : mint flag checking result : '))
                 if (checkingverify) {
                   if (res['result']['0']['SourceCode'].includes('mint')) {
                     checkingState = false
@@ -150,7 +150,7 @@ const run = async () => {
             })
         //-----------------checking renounce state    
         if (renounceCheck) {
-          console.log(chalk.yellow('\n Step 3 : Token owner  renounce checking result : '))
+          console.log(chalk.yellow('\n [Token Checking] : Token owner  renounce checking result : '))
           try {
             let tokenContract = new ethers.Contract(
               tokenAddress + '',
@@ -208,7 +208,7 @@ const run = async () => {
         }
         //-----------------checking liquidity  state  
         if (liqudityLockCheck) {
-          console.log(chalk.yellow('\n Step 4 : Liqudity Lock Check result : '))
+          console.log(chalk.yellow('\n [Token Checking] : Liqudity Lock Check result : '))
           const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenAddress + '&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
           await fetch(url)
             .then(res => res.json())
@@ -224,7 +224,7 @@ const run = async () => {
         }
         //-----------------checking honeypot state and tax fee             
         if (honeypotCheck) {
-          console.log(chalk.yellow('\n Step 5 : HoneyPot checking result : '))
+          console.log(chalk.yellow('\n [Token Checking] : HoneyPot checking result : '))
             let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
             await fetch(honeypot_url)
             .then(res => res.json())
@@ -240,7 +240,7 @@ const run = async () => {
        }
         //---------------------- checking tax state        
         if (taxCheck) {
-          console.log(chalk.yellow('\n Step 6 : Check tax fee result'))
+          console.log(chalk.yellow('\n [Token Checking] : Check tax fee result'))
           let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
           await fetch(honeypot_url)
           .then(res => res.json())
@@ -286,7 +286,6 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       return 
     } else {
       amountIn = ethers.BigNumber.from(parseInt(Math.round(Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01))+'')
-      console.log(amountIn)
       console.log(chalk.green("there is enough balance")) 
     }
   } else {
@@ -336,7 +335,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
     } else { setTimeout( async() => {
       transactionState = false
       console.log(chalk.green.inverse(`\n ======================Buying tokens=======================`));
-      console.log( "\n this is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
+      console.log( "\n Buy Mode is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
       const tx = await router.swapExactETHForTokens(
         amountOutMin,
         [tokenIn, tokenOut],
@@ -382,37 +381,33 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
   console.log (chalk.yellow("\n checking price profit"))
   if (cur_price > (price * data.profit / 100)) 
   {
-    console.log("   sell price check result : OK, Bot will sell token.")
+    console.log("   sell price check result : OK")
     flag = true
   } else {
     console.log("   sell price check result : NO")
   }
 
-
   console.log (chalk.yellow("\n checking hold time"))
   if(Math.round(+new Date()/1000) >= time + data.MaxHoldTime) {
     flag = true
-    console.log("Hold time reached, Bot will sell token")
+    console.log("   Hold time reached")
   } else {
-    console.log("Hold time is not reached")
+    console.log("   Hold time is not reached")
   }
 
-
-  console.log (chalk.yellow("\n checking Token status"))
   let LiqudityCheckState = await checkToken(tokenIn, false, false, false, true, false, false)
   if(LiqudityCheckState  == true){
   } else {
     flag = true
-    console.log("Liquidity is unlocked, bot will sell token")
+    console.log("   Liquidity is unlocked")
   }
 
-  console.log (chalk.yellow("\n checking Token Scam checker"))
   let ScamCheckState = await checkToken(tokenIn, false, false, true, false, false, false)
   if(ScamCheckState  == true){
-    console.log("Token checking result : OK")
+    console.log("   Token checking result : OK")
   } else {
     flag = true
-    console.log("It is seems that token is scam, bot will sell token")
+    console.log("   It is seems that token is scam")
   }
 
   if(flag){
