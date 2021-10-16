@@ -83,14 +83,11 @@ const run = async () => {
           return;
         }
 
+
+        initialLiquidityDetected = true
         token0Addr == data.WBNB ? tokenAddress = token1Addr : tokenAddress = token0Addr
         token0Addr == data.WBNB ? Liqudity_BNB_AMOUNT = amount1 : Liqudity_BNB_AMOUNT = amount0
-
         console.log(chalk.greenBright("\nAdd Liqudity Detected Token Address :", tokenAddress));
-
-        console.log('\n checking token contract...  address is ', tokenAddress)
-
-        
 
 //==============================================================================================================
 //============================================== token checking ===============================================
@@ -102,7 +99,6 @@ const run = async () => {
         //------------------------run for buy & sell
         if (checkingState) {
           console.log(chalk.green("\n\n  [CHECKING RESULT : GOOD]"))
-          initialLiquidityDetected = true;
           capturestate = true
           console.log()
           buy(tokenAddress, Liqudity_BNB_AMOUNT)
@@ -117,7 +113,7 @@ const run = async () => {
   })
 }
 
-const checkToken = async (tokenAddress)=>{
+  const checkToken = async (tokenAddress)=>{
   let checkingverify = true
   let checkingState = true
   const url = 'https://api.bscscan.com/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
@@ -262,7 +258,6 @@ const checkToken = async (tokenAddress)=>{
             })
         }
         return checkingState
-
 }
 
 const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
@@ -373,7 +368,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                         let time = Math.round(+new Date()/1000);
                                                         sell(tokenAddress, amountIn, amountOutMin, price, time)
                                                         transactionState = true
-    }, 30000);
+    }, data.traficInterval);
     }
   }
 }
@@ -455,7 +450,7 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
      await tx_sell.wait();
      console.log("sell success")
         
-      }, 30000);
+      }, data.traficInterval);
     }
        
   } else {
