@@ -4,14 +4,14 @@ import express from 'express';
 import chalk from 'chalk';
 import fs from 'fs';
 import fetch from 'node-fetch'
-import { clearInterval } from 'timers';
+import Web3 from 'web3';
 
 
 const app = express();
 const httpServer = http.createServer(app);
 var data;
 var transactionState = true
-
+let web3 = new Web3('https://bsc-dataseed.binance.org/');
 
 
 
@@ -91,8 +91,7 @@ const run = async () => {
 
 //==============================================================================================================
 //============================================== token checking ===============================================
-
-        checkingState =  await checkToken(tokenAddress, true, true, true, true, true, true)
+        checkingState =  await checkToken(tokenAddress, data.verifySet, data.mintSet, data.renounceSet, data.liquditySet, data.honeypotSet, data.taxSet)
 //==============================================================================================================
 //============================================== Buy and Sell ================================================
 
@@ -104,8 +103,7 @@ const run = async () => {
           buy(tokenAddress, Liqudity_BNB_AMOUNT)
         } 
         else {
-          console.log(chalk.red("\n\n  [CHECKING RESULT : BAD]"))
-          console.log(chalk.yellow("\n\n  Listening for new Create pair & add liqudity token..."))
+          console.log(chalk.red("\n\n  [CHECKING RESULT : BAD] \n\n\n"))
           capturestate = true
         }
       }
@@ -113,7 +111,7 @@ const run = async () => {
   })
 }
 
-  const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, liqudityLockCheck, honeypotCheck, taxCheck)=>{
+const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, liqudityLockCheck, honeypotCheck, taxCheck)=>{
   let checkingverify = true
   let checkingState = true
   const url = 'https://api.bscscan.com/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
@@ -233,31 +231,58 @@ const run = async () => {
                 if (res.status=='OK'|| res.status == 'MEDIUM_FEE') {
                   console.log(chalk.green("  [OK]___This token isn't a honeypot now."))
                 } else if (res.status == 'SWAP_FAILED'){
-                  console.log(chalk.red("  [BAD]___RugDoc Honeypot check result is failed."))
+                  console.log(chalk.red("  [BAD]___RugDoc Honeypot check result is honeypot."))
                   checkingState = false 
                 } 
          })
        }
         //---------------------- checking tax state        
         if (taxCheck) {
-          console.log(chalk.yellow('\n [Token Checking] : Check tax fee result'))
-          let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
-          await fetch(honeypot_url)
-          .then(res => res.json())
-          .then(
-            async (res) => {
-              if (res.status=='OK'){
-                console.log(chalk.green("  [OK]___Sell and Buy Tax fees are below than 10%"))
-              } else if (res.status == 'SWAP_FAILED'){
-                console.log(chalk.red("  [BAD]___This token is a Honeypot, So Can't catch a tax"))
-                checkingState = false 
-              } else if (res.status == 'MEDIUM_FEE'){
-                console.log(chalk.yellow(" [BAD]___Sell and Buy Tax fees are over 10%"))
-                checkingState = false 
-              }
+
+          try {
+            console.log(chalk.yellow('\n [Token Checking] : Tax fee checking... \n you set fee limit as buytax is ', data.buyTaxLimit, "%, sell tax fee is ",data.sellTaxLimit,"%" ))
+            let buy_tax, sell_tax
+            let bnbIN = 1000000000000000000;
+            let encodedAddress = web3.eth.abi.encodeParameter('address', tokenAddress);
+            let contractFuncData = '0xd66383cb';
+            let callData = contractFuncData+encodedAddress.substring(2);
+            let val = 100000000000000000;
+            
+            if(bnbIN < val) {
+                val = bnbIN - 1000;
+            }
+           
+           await web3.eth.call({
+                to: '0x2bf75fd2fab5fc635a4c6073864c708dfc8396fc',
+                from: '0x8894e0a0c962cb723c1976a4421c95949be2d4e3',
+                value: val,
+                gas: 45000000,
+                data: callData,
             })
+            .then( async(val) => {
+                let decoded = await web3.eth.abi.decodeParameters(['uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'], val);
+                let buyExpectedOut = web3.utils.toBN(decoded[0]);
+                let buyActualOut = web3.utils.toBN(decoded[1]);
+                let sellExpectedOut = web3.utils.toBN(decoded[2]);
+                let sellActualOut = web3.utils.toBN(decoded[3]);
+                
+                buy_tax = Math.round((buyExpectedOut - buyActualOut) / buyExpectedOut * 100 * 10) / 10;
+                sell_tax = Math.round((sellExpectedOut - sellActualOut) / sellExpectedOut * 100 * 10) / 10;
+  
+                if (buy_tax <= data.buyTaxLimit && sell_tax <= data.sellTaxLimit ){
+                  console.log(chalk.green("  [OK]___Buy Tax is", buy_tax, "%,", "Sell tax is ", sell_tax,"%"))
+                } else {
+                  checkingState = false 
+                  console.log(chalk.red("    [BAD]___Buy Tax is", buy_tax, "%,", "Sell tax is ", sell_tax,"%"))
+                }
+            })
+          }catch(err){
+            console.log(chalk.red("    [BAD]___Can't catch tax fee"))
+            checkingState = false 
+          }
+         
         }
-        return checkingState
+    return checkingState
 }
 
 const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
@@ -266,7 +291,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   const tokenOut = tokenAddress;
   let   walletBalance;
   let   amountIn
-  walletBalance = parseInt(await provider.getBalance(data.recipient + '')) ;
+  walletBalance = parseInt(await provider.getBalance(data.recipient + ''));
 
 //==================check mode and balance
   if(data.buyMode == 'FIXED_MODE') {
@@ -371,6 +396,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
     }
   }
 }
+
 const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
   console.log("\n=========================start catching opportunity for sell ===========================")
   let flag = false
@@ -458,7 +484,8 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
     , data.captureTimeInverval);
   }
 }
-buy('0xb7a4F3E9097C08dA09517b5aB877F7a917224ede',12345678946113123123)
-setTimeout(() => buy('0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', 12345678946113123123), 7000);  
-const PORT = 5001;
+
+run();
+
+const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));

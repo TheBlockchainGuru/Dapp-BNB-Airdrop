@@ -21,12 +21,32 @@ Execute Sale of Token/Contract
 
 1. set metamask wallet address and private key
 
-    config.json
+    
+            "recipient": "0x76bD076f18b926407ce1473BBa4c77C047B10FC8",
+            "privateKey": "",                                        
+            
+            "WBNB":       "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+            "factory":    "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73",
+            "router":     "0x10ED43C718714eb63d5aA57B78B54704E256024E",
+            "mainnetURL": "https://bsc-dataseed.binance.org/",
 
-        "provider": "",
-        "recipient": "",
-        "privateKey": "",
-        "profit": 200,
+            "verifyset":   true,                                                    //  checking enable (false : disable)
+            "honeypotset": true,                                                    //  checking enable (false : disable) 
+            "mintset":     true,                                                    //  checking enable (false : disable) 
+            "taxset":      true,                                                    //  checking enable (false : disable) 
+            "renounceset": true,                                                    //  checking enable (false : disable) 
+            "liqudityset": true,                                                    //  checking enable (false : disable) 
+
+            "buyMode" : "FIXED_MODE",                                               //  ('FIXED_MODE' : fixed bnb amount, "PERCENT_MODE" : percent of liqudity amount )
+            
+            "AMOUNT_OF_WBNB": 0.00002,     
+            "PERCENT_OF_WBNB" : 0.0000001,
+            "Slippage": 100,
+            "profit": 200,                                                          // (limit profit for sell)
+            "gasPrice": 5,
+            "gasLimit": 345684,
+            "MaxHoldTime" : 200000,                                                 // (minium holding token time)
+            "captureTimeInverval" : 50000,                                          // (time interval checking sell condition capture)
 
     add wallet address to recipient, privatekey to privateKey.
 2. install node.js  
