@@ -14,8 +14,6 @@ var transactionState = true
 let web3 = new Web3('https://bsc-dataseed.binance.org/');
 
 
-
-
 try {
   data = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 } catch (error) {
@@ -66,95 +64,119 @@ const run = async () => {
     }
 
     if (token0Addr !== data.WBNB && token1Addr !== data.WBNB) {
-      //console.log(chalk.red(" \n [BAD]___it isn't bnb pair!!"))
       return;
     }
     let initialLiquidityDetected = false;
     const pair = new ethers.Contract(pairAddress, ['event Sync(uint112 reserve1, uint112 reserve2)'], account);
 //==============================================================================================================
 //============================================== detect add liqudity event =====================================
+    try { 
+      pair.on('Sync', async (amount0, amount1) => {
 
-    pair.on('Sync', async (amount0, amount1) => {
-      if (capturestate == true) {
-        capturestate = false
-
-        if (initialLiquidityDetected === true) {
-          capturestate = true
-          return;
+        if (capturestate == true) {
+          capturestate = false
+          if (initialLiquidityDetected === true) {
+            capturestate = true
+            return;
+          }
+          initialLiquidityDetected = true
+          token0Addr == data.WBNB ? tokenAddress = token1Addr : tokenAddress = token0Addr
+          token0Addr == data.WBNB ? Liqudity_BNB_AMOUNT = amount1 : Liqudity_BNB_AMOUNT = amount0
+          console.log(chalk.greenBright("\nAdd Liqudity Detected Token Address :", tokenAddress));
+  
+  //==============================================================================================================
+  //============================================== token checking ===============================================
+          checkingState =  await checkToken(tokenAddress, data.verifySet, data.mintSet, data.renounceSet, data.liquditySet, data.honeypotSet, data.taxSet)
+  //==============================================================================================================
+  //============================================== Buy and Sell ================================================
+          //------------------------run for buy & sell
+          if (checkingState) {
+            console.log(chalk.green("\n\n  [CHECKING RESULT : GOOD]"))
+            capturestate = true
+            console.log()
+            buy(tokenAddress, Liqudity_BNB_AMOUNT)
+          } 
+          else {
+            console.log(chalk.red("\n\n  [CHECKING RESULT : BAD] \n\n\n"))
+            capturestate = true
+          }
         }
+      })
+    }catch(err){
 
-
-        initialLiquidityDetected = true
-        token0Addr == data.WBNB ? tokenAddress = token1Addr : tokenAddress = token0Addr
-        token0Addr == data.WBNB ? Liqudity_BNB_AMOUNT = amount1 : Liqudity_BNB_AMOUNT = amount0
-        console.log(chalk.greenBright("\nAdd Liqudity Detected Token Address :", tokenAddress));
-
-//==============================================================================================================
-//============================================== token checking ===============================================
-        checkingState =  await checkToken(tokenAddress, data.verifySet, data.mintSet, data.renounceSet, data.liquditySet, data.honeypotSet, data.taxSet)
-//==============================================================================================================
-//============================================== Buy and Sell ================================================
-
-        //------------------------run for buy & sell
-        if (checkingState) {
-          console.log(chalk.green("\n\n  [CHECKING RESULT : GOOD]"))
-          capturestate = true
-          console.log()
-          buy(tokenAddress, Liqudity_BNB_AMOUNT)
-        } 
-        else {
-          console.log(chalk.red("\n\n  [CHECKING RESULT : BAD] \n\n\n"))
-          capturestate = true
-        }
-      }
-    })
+    }
   })
 }
 
-const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, liqudityLockCheck, honeypotCheck, taxCheck)=>{
+const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, liqudityLockCheck, honeypotCheck, taxCheck) => {
+  
   let checkingverify = true
-  let checkingState = true
-  const url = 'https://api.bscscan.com/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
-        await fetch(url)
-          .then(res => res.json())
-          .then(
-            async (res) => {
-              //-----------------checking verify state
-              if (veryfyCheck) {
-                console.log(chalk.yellow('\n [Token Checking] : verify checking result : '))
-                if (res['result']['0']['ABI'] == "Contract source code not verified") {
+  let checkingState  = true
+  try{
+      const url = 'https://api.bscscan.com/api?module=contract&action=getsourcecode&address=' + tokenAddress + '&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
+      await fetch(url)
+        .then(res => res.json())
+        .then(
+          async (res) => {
+            //-----------------checking verify state
+            if (veryfyCheck) {
+              console.log(chalk.yellow('\n [Token Checking] : verify checking result : '))
+              if (res['result']['0']['ABI'] == "Contract source code not verified") {
+                checkingState = false
+                checkingverify = false
+                console.log(chalk.red("  [BAD]___contract isn't verified"))
+              } else {
+                console.log(chalk.green("  [OK]___contract is verified"))
+              }
+            }
+            //-----------------checking mint state
+            if (mintCheck) {
+              console.log(chalk.yellow('\n [Token Checking] : mint flag checking result : '))
+              if (checkingverify) {
+                if (res['result']['0']['SourceCode'].includes('mint')) {
                   checkingState = false
-                  checkingverify = false
-                  console.log(chalk.red("  [BAD]___contract isn't verified"))
+                  console.log(chalk.red("  [BAD]___contract has mint function enabled."))
                 } else {
-                  console.log(chalk.green("  [OK]___contract is verified"))
+                  console.log(chalk.green("  [OK]___contract has mint function disabled"))
                 }
+              } else {
+                console.log(chalk.red("  [BAD]___can't check without verify"))
               }
-
-              //-----------------checking mint state
-              if (mintCheck) {
-                console.log(chalk.yellow('\n [Token Checking] : mint flag checking result : '))
-                if (checkingverify) {
-                  if (res['result']['0']['SourceCode'].includes('mint')) {
-                    checkingState = false
-                    console.log(chalk.red("  [BAD]___contract has mint function enabled."))
-                  } else {
-                    console.log(chalk.green("  [OK]___contract has mint function disabled"))
-                  }
-                } else {
-                  console.log(chalk.red("  [BAD]___can't check without verify"))
-                }
-              }
-            })
-        //-----------------checking renounce state    
-        if (renounceCheck) {
-          console.log(chalk.yellow('\n [Token Checking] : Token owner  renounce checking result : '))
+            }
+          })
+      //-----------------checking renounce state    
+      if (renounceCheck) {
+        console.log(chalk.yellow('\n [Token Checking] : Token owner  renounce checking result : '))
+        try {
+          let tokenContract = new ethers.Contract(
+            tokenAddress + '',
+            [{
+              "inputs": [],
+              "name": "getOwner",
+              "outputs": [{
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+              }],
+              "stateMutability": "view",
+              "type": "function"
+            }],
+            account
+          )
+          let tokenOwnerAddress = await tokenContract.getOwner()
+          if (tokenOwnerAddress == '0x0000000000000000000000000000000000000000') {
+            checkingState = false
+            console.log(chalk.red("  [BAD]___contract is renounced."))
+          } else {
+            console.log(chalk.green("  [OK]___contract isn't renounced Owner address is : ", tokenOwnerAddress))
+          }
+        } catch (err) {
           try {
             let tokenContract = new ethers.Contract(
               tokenAddress + '',
               [{
                 "inputs": [],
-                "name": "getOwner",
+                "name": "owner",
                 "outputs": [{
                   "internalType": "address",
                   "name": "",
@@ -165,128 +187,106 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
               }],
               account
             )
-
-            let tokenOwnerAddress = await tokenContract.getOwner()
+            let tokenOwnerAddress = await tokenContract.owner()
             if (tokenOwnerAddress == '0x0000000000000000000000000000000000000000') {
               checkingState = false
               console.log(chalk.red("  [BAD]___contract is renounced."))
             } else {
               console.log(chalk.green("  [OK]___contract isn't renounced Owner address is : ", tokenOwnerAddress))
             }
+
           } catch (err) {
-            try {
-              let tokenContract = new ethers.Contract(
-                tokenAddress + '',
-                [{
-                  "inputs": [],
-                  "name": "owner",
-                  "outputs": [{
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
-                  }],
-                  "stateMutability": "view",
-                  "type": "function"
-                }],
-                account
-              )
-              let tokenOwnerAddress = await tokenContract.owner()
-              if (tokenOwnerAddress == '0x0000000000000000000000000000000000000000') {
-                checkingState = false
-                console.log(chalk.red("  [BAD]___contract is renounced."))
+            checkingState = false
+            console.log(chalk.red("  [BAD]___Can't catch owner address"))
+          }
+        }
+      }
+      //-----------------checking liquidity  state  
+      if (liqudityLockCheck) {
+        console.log(chalk.yellow('\n [Token Checking] : Liqudity Lock Check result : '))
+        const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenAddress + '&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
+        await fetch(url)
+          .then(res => res.json())
+          .then(
+            (res) => {
+              if (res['result'] > 0) {
+                console.log(chalk.green("  [OK]___contract is liquidity locked")) 
               } else {
-                console.log(chalk.green("  [OK]___contract isn't renounced Owner address is : ", tokenOwnerAddress))
+                checkingState = false
+                console.log(chalk.red("  [BAD]___contract is not locked"))
               }
-
-            } catch (err) {
-              checkingState = false
-              console.log(chalk.red("  [BAD]___Can't catch owner address"))
-            }
-          }
-        }
-        //-----------------checking liquidity  state  
-        if (liqudityLockCheck) {
-          console.log(chalk.yellow('\n [Token Checking] : Liqudity Lock Check result : '))
-          const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenAddress + '&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
-          await fetch(url)
-            .then(res => res.json())
-            .then(
-              (res) => {
-                if (res['result'] > 0) {
-                  console.log(chalk.green("  [OK]___contract is liquidity locked")) 
-                } else {
-                  checkingState = false
-                  console.log(chalk.red("  [BAD]___contract is not locked"))
-                }
-              })
-        }
-        //-----------------checking honeypot state and tax fee             
-        if (honeypotCheck) {
-          console.log(chalk.yellow('\n [Token Checking] : HoneyPot checking result : '))
-            let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
-            await fetch(honeypot_url)
-            .then(res => res.json())
-            .then(
-              async (res) => {
-                if (res.status=='OK'|| res.status == 'MEDIUM_FEE') {
-                  console.log(chalk.green("  [OK]___This token isn't a honeypot now."))
-                } else if (res.status == 'SWAP_FAILED'){
-                  console.log(chalk.red("  [BAD]___RugDoc Honeypot check result is honeypot."))
-                  checkingState = false 
-                } 
-         })
-       }
-        //---------------------- checking tax state        
-        if (taxCheck) {
-
-          try {
-            console.log(chalk.yellow('\n [Token Checking] : Tax fee checking... \n you set fee limit as buytax is ', data.buyTaxLimit, "%, sell tax fee is ",data.sellTaxLimit,"%" ))
-            let buy_tax, sell_tax
-            let bnbIN = 1000000000000000000;
-            let encodedAddress = web3.eth.abi.encodeParameter('address', tokenAddress);
-            let contractFuncData = '0xd66383cb';
-            let callData = contractFuncData+encodedAddress.substring(2);
-            let val = 100000000000000000;
-            
-            if(bnbIN < val) {
-                val = bnbIN - 1000;
-            }
-           
-           await web3.eth.call({
-                to: '0x2bf75fd2fab5fc635a4c6073864c708dfc8396fc',
-                from: '0x8894e0a0c962cb723c1976a4421c95949be2d4e3',
-                value: val,
-                gas: 45000000,
-                data: callData,
             })
-            .then( async(val) => {
-                let decoded = await web3.eth.abi.decodeParameters(['uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'], val);
-                let buyExpectedOut = web3.utils.toBN(decoded[0]);
-                let buyActualOut = web3.utils.toBN(decoded[1]);
-                let sellExpectedOut = web3.utils.toBN(decoded[2]);
-                let sellActualOut = web3.utils.toBN(decoded[3]);
-                
-                buy_tax = Math.round((buyExpectedOut - buyActualOut) / buyExpectedOut * 100 * 10) / 10;
-                sell_tax = Math.round((sellExpectedOut - sellActualOut) / sellExpectedOut * 100 * 10) / 10;
-  
-                if (buy_tax <= data.buyTaxLimit && sell_tax <= data.sellTaxLimit ){
-                  console.log(chalk.green("  [OK]___Buy Tax is", buy_tax, "%,", "Sell tax is ", sell_tax,"%"))
-                } else {
-                  checkingState = false 
-                  console.log(chalk.red("    [BAD]___Buy Tax is", buy_tax, "%,", "Sell tax is ", sell_tax,"%"))
-                }
-            })
-          }catch(err){
-            console.log(chalk.red("    [BAD]___Can't catch tax fee"))
-            checkingState = false 
+      }
+      //-----------------checking honeypot state and tax fee             
+      if (honeypotCheck) {
+        console.log(chalk.yellow('\n [Token Checking] : HoneyPot checking result : '))
+          let honeypot_url = 'https://honeypot.api.rugdoc.io/api/honeypotStatus.js?address=' + tokenAddress + '&chain=bsc'
+          await fetch(honeypot_url)
+          .then(res => res.json())
+          .then(
+            async (res) => {
+              if (res.status=='OK'|| res.status == 'MEDIUM_FEE') {
+                console.log(chalk.green("  [OK]___This token isn't a honeypot now."))
+              } else if (res.status == 'SWAP_FAILED'){
+                console.log(chalk.red("  [BAD]___RugDoc Honeypot check result is honeypot."))
+                checkingState = false 
+              } 
+      })
+      }
+      //---------------------- checking tax state        
+      if (taxCheck) {
+
+        try {
+          console.log(chalk.yellow('\n [Token Checking] : Tax fee checking... \n   you set fee limit as buytax is ', data.buyTaxLimit, "%, sell tax fee is ",data.sellTaxLimit,"%" ))
+          let buy_tax, sell_tax
+          let bnbIN = 1000000000000000000;
+          let encodedAddress = web3.eth.abi.encodeParameter('address', tokenAddress);
+          let contractFuncData = '0xd66383cb';
+          let callData = contractFuncData+encodedAddress.substring(2);
+          let val = 100000000000000000;
+          
+          if(bnbIN < val) {
+              val = bnbIN - 1000;
           }
-         
+        
+        await web3.eth.call({
+              to: '0x2bf75fd2fab5fc635a4c6073864c708dfc8396fc',
+              from: '0x8894e0a0c962cb723c1976a4421c95949be2d4e3',
+              value: val,
+              gas: 45000000,
+              data: callData,
+          })
+          .then( async(val) => {
+              let decoded = await web3.eth.abi.decodeParameters(['uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'], val);
+              let buyExpectedOut = web3.utils.toBN(decoded[0]);
+              let buyActualOut = web3.utils.toBN(decoded[1]);
+              let sellExpectedOut = web3.utils.toBN(decoded[2]);
+              let sellActualOut = web3.utils.toBN(decoded[3]);
+              
+              buy_tax = Math.round((buyExpectedOut - buyActualOut) / buyExpectedOut * 100 * 10) / 10;
+              sell_tax = Math.round((sellExpectedOut - sellActualOut) / sellExpectedOut * 100 * 10) / 10;
+
+              if (buy_tax <= data.buyTaxLimit && sell_tax <= data.sellTaxLimit ){
+                console.log(chalk.green("\n  [OK]___Buy Tax is", buy_tax, "%,", "Sell tax is ", sell_tax,"%"))
+              } else {
+                checkingState = false 
+                console.log(chalk.red("\n  [BAD]___Buy Tax is", buy_tax, "%,", "Sell tax is ", sell_tax,"%"))
+              }
+          })
+        }catch(err){
+          console.log(chalk.red("\n  [BAD]___Can't catch tax fee"))
+          checkingState = false 
         }
+      
+      }
     return checkingState
+  }catch(err){
+     console.log(chalk.red('some error ocurr in checking, we will check again.'))
+     return checkingState = false
+  }
 }
 
 const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
-  
   const tokenIn = data.WBNB;
   const tokenOut = tokenAddress;
   let   walletBalance;
@@ -303,8 +303,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       amountIn =  ethers.BigNumber.from(data.AMOUNT_OF_WBNB * 1000000000000000000)
       console.log(chalk.green("there is enough balance")) 
     }
-  } 
-
+  }
   else if (data.buyMode == 'PERCENT_MODE'){
     if (walletBalance < Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01){
       console.log(chalk.red("Please check wallet balance"))
@@ -316,12 +315,9 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   } else {
     console.log(chalk.red("please check buy mode variable."))
   }
-
   const amounts = await router.getAmountsOut(amountIn, [tokenIn, tokenOut]);
-
 //=============================================================================
   const amountOutMin =  ethers.BigNumber.from((amounts[1] * data.Slippage/ 100)+'');
-
   let price = amountIn / amountOutMin;
   if (botStatus === true) {
     if (transactionState == true){
@@ -374,10 +370,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
           console.log(err)
           console.log(chalk.red('\nBUY token failed...'))
       });
-
       await tx.wait();
       console.log(chalk.green("\n Buy success"))
-
       const tokenContract = new ethers.Contract(tokenAddress, ['function approve(address spenderYHOT, uint tokens) public virtual returns (bool success)'], account)
       const approve       = await tokenContract.approve(data.router, ethers.BigNumber.from('0xffffffffffffffff'), 
                                                         {
@@ -386,11 +380,12 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                         }).catch((err) => {
                                                           console.log(chalk.red('Token Approve failed...'))
                                                         });
-                                                        
                                                         await approve.wait();
                                                         console.log(chalk.green("Approve success"))
                                                         let time = Math.round(+new Date()/1000);
+
                                                         sell(tokenAddress, amountIn, amountOutMin, price, time)
+
                                                         transactionState = true
     }, data.traficInterval);
     }
@@ -486,6 +481,5 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
 }
 
 run();
-
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));

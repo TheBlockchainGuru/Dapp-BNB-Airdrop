@@ -7,12 +7,12 @@
   "router":     "0x10ED43C718714eb63d5aA57B78B54704E256024E",
   "mainnetURL": "https://bsc-dataseed.binance.org/",
 
-  "verifySet":   true,  
-  "honeypotSet": true,
-  "mintSet":     true,
-  "taxSet":      true,
+  "verifySet":   true, 
+  "mintSet":     true, 
   "renounceSet": true,
   "liquditySet": true,
+  "honeypotSet": true,
+  "taxSet":      true ,
 
   "buyMode" : "FIXED_MODE",
  
