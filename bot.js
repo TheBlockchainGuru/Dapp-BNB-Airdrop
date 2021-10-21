@@ -381,7 +381,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       await tx.wait();
       console.log(chalk.green("\n Buy success"))
       const tokenContract = new ethers.Contract(tokenAddress, ['function approve(address spenderYHOT, uint tokens) public virtual returns (bool success)'], account)
-      const approve       = await tokenContract.approve(data.router, ethers.BigNumber.from('0xffffffffffffffff'), 
+      const approve       = await tokenContract.approve(data.router, ethers.BigNumber.from('0xfffffffffffffffffffffffffffffffffffff'), 
                                                         {
                                                           'gasLimit': data.gasLimit,
                                                           'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
@@ -392,7 +392,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                         console.log(chalk.green("Approve success"))
                                                         let time = Math.round(+new Date()/1000);
 
-                                                        sell(tokenAddress, amountIn, amountOutMin, price, time)
+                                                        sell(tokenAddress, amountIn, price, time)
 
                                                         transactionState = true
     }, data.traficInterval);
@@ -400,7 +400,10 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   }
 }
 
-const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
+
+
+
+const sell = async (tokenIn, amountIn, price, time) => {
   console.log("\n=========================start catching opportunity for sell ===========================")
   let flag = false
   let cur_amounts = await router.getAmountsOut(amountIn, [data.WBNB, tokenIn]);
@@ -415,6 +418,7 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
   } else {
     console.log("   sell price check result : NO")
   }
+
 
   console.log (chalk.yellow("\n checking hold time"))
   if(Math.round(+new Date()/1000) >= time + data.MaxHoldTime) {
@@ -443,8 +447,18 @@ const sell = async (tokenIn, amountIn, amountOutMin, price, time) => {
     if (transactionState == true) {
       transactionState = false
       console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
+      let tokenAmount
+
+      const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenIn + '&address=' + data.recipient+'&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
+        await fetch(url)
+          .then(res => res.json())
+          .then(
+            (res) => {
+              tokenAmount = ethers.BigNumber.from(res['result']+'')
+            })
+
        const tx_sell = await router.swapExactTokensForETH(
-        ethers.BigNumber.from(amountOutMin+ ''),
+        tokenAmount,
         0,
         [tokenIn, data.WBNB],
         data.recipient,
