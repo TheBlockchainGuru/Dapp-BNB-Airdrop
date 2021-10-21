@@ -133,7 +133,7 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
             if (mintCheck) {
               console.log(chalk.yellow('\n [Token Checking] : mint flag checking result : '))
               if (checkingverify) {
-                if (res['result']['0']['SourceCode'].includes('mint')) {
+                if (res['result']['0']['SourceCode'].includes('mint')||res['result']['0']['SourceCode'].includes('Mint')) {
                   checkingState = false
                   console.log(chalk.red("  [BAD]___contract has mint function enabled."))
                 } else {
@@ -224,10 +224,10 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
           await fetch(honeypot_url)
           .then(res => res.json())
           .then(
-            async (res) => {
-              if (res.status=='OK'|| res.status == 'MEDIUM_FEE') {
+            async (res) => { 
+              if (res.status=='OK'|| res.status == 'MEDIUM_FEE'|| res.status == "HIGH_FEE") {
                 console.log(chalk.green("  [OK]___This token isn't a honeypot now."))
-              } else if (res.status == 'SWAP_FAILED'){
+              } else if (res.status == 'SWAP_FAILED'||res.status == 'NO_PAIRS'||res.status == "APPROVE_FAILED"){
                 console.log(chalk.red("  [BAD]___RugDoc Honeypot check result is honeypot."))
                 checkingState = false 
               } 
@@ -274,7 +274,7 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
               }
           })
         }catch(err){
-          console.log(chalk.red("\n  [BAD]___Can't catch tax fee"))
+          console.log(chalk.red("\n  [BAD]___Buy and Sell tax fee are undertermined"))
           checkingState = false 
         }
       
@@ -304,6 +304,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       console.log(chalk.green("there is enough balance")) 
     }
   }
+
   else if (data.buyMode == 'PERCENT_MODE'){
     if (walletBalance < Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01){
       console.log(chalk.red("Please check wallet balance"))
@@ -315,6 +316,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   } else {
     console.log(chalk.red("please check buy mode variable."))
   }
+
+
   const amounts = await router.getAmountsOut(amountIn, [tokenIn, tokenOut]);
 //=============================================================================
   const amountOutMin =  ethers.BigNumber.from((amounts[1] * data.Slippage/ 100)+'');
@@ -323,7 +326,12 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
     if (transactionState == true){
       transactionState = false
       console.log(chalk.green.inverse(`\n ======================Buying tokens=======================`));
-      console.log( "\n this is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
+      if (data.buyMode == "FIXED_MODE"){
+        console.log( "\n this is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
+      }
+      else if (data.buyMode == "PERCENT_MODE"){
+        console.log( "\n this is ", data.buyMode,"Pool liquidiay amount is ",Liqudity_BNB_AMOUNT/1000000000000000000, "BNB, Percent is", data.PERCENT_OF_WBNB," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
+      }
       const tx = await router.swapExactETHForTokens(
         amountOutMin,
         [tokenIn, tokenOut],
