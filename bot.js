@@ -391,7 +391,6 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                         await approve.wait();
                                                         console.log(chalk.green("Approve success"))
                                                         let time = Math.round(+new Date()/1000);
-
                                                         sell(tokenAddress, amountIn, price, time)
 
                                                         transactionState = true
@@ -421,7 +420,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
 
 
   console.log (chalk.yellow("\n checking hold time"))
-  if(Math.round(+new Date()/1000) >= time + data.MaxHoldTime) {
+  if(Math.round(new Date()/1000) >= time + data.MaxHoldTime) {
     flag = true
     console.log("   Hold time reached")
   } else {
@@ -435,7 +434,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
     console.log("   Liquidity is unlocked")
   }
 
-  let ScamCheckState = await checkToken(tokenIn, false, false, true, false, false, false)
+  let ScamCheckState = await checkToken(tokenIn, false, false, true , false, false, false)
   if(ScamCheckState  == true){
     console.log("   Token checking result : OK")
   } else {
@@ -449,16 +448,19 @@ const sell = async (tokenIn, amountIn, price, time) => {
       console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
       let tokenAmount
 
-      const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenIn + '&address=' + data.recipient+'&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
-        await fetch(url)
-          .then(res => res.json())
-          .then(
-            (res) => {
-              tokenAmount = ethers.BigNumber.from(res['result']+'')
-            })
 
+      let tokenContract = new ethers.Contract(
+        tokenIn + '',
+        [{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}],
+        account
+      )
+
+
+      tokenAmount =await tokenContract.balanceOf(data.recipient);
+
+      console.log(tokenAmount / 1)
        const tx_sell = await router.swapExactTokensForETH(
-        tokenAmount,
+        ethers.BigNumber.from(tokenAmount / 1+''),
         0,
         [tokenIn, data.WBNB],
         data.recipient,
@@ -469,33 +471,55 @@ const sell = async (tokenIn, amountIn, price, time) => {
         }).catch((err) => {
         console.log(err)
         console.log('transaction failed...')
+        flag = false;
       });
+
       flag = false;
+
       await tx_sell.wait();
       console.log("sell success")
       transactionState = true
-    } else {
+    
+    
+    } 
+    else {
+
       setTimeout(async() => {
-      console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
-      const tx_sell = await router.swapExactTokensForETH(
-       ethers.BigNumber.from(amountOutMin+ ''),
-       0,
-       [tokenIn, data.WBNB],
-       data.recipient,
-       Date.now() + 1000 * 60 * 10, //10 minutes
-       {
-         'gasLimit': data.gasLimit,
-         'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei')
-       }).catch((err) => {
-       console.log(err)
-       console.log('transaction failed...')
-     });
-     flag = false;
-     await tx_sell.wait();
-     console.log("sell success")
-        
+        transactionState = false
+        console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
+        let tokenAmount
+        let tokenContract = new ethers.Contract(
+          tokenIn + '',
+          [{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}],
+          account
+        )
+        tokenAmount =await tokenContract.balanceOf(data.recipient);
+        console.log(tokenAmount / 1)
+         const tx_sell = await router.swapExactTokensForETH(
+          ethers.BigNumber.from(tokenAmount / 1+''),
+          0,
+          [tokenIn, data.WBNB],
+          data.recipient,
+          Date.now() + 1000 * 60 * 10, //10 minutes
+          {
+            'gasLimit': data.gasLimit,
+            'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei')
+          }).catch((err) => {
+          console.log(err)
+          console.log('transaction failed...')
+          flag = false;
+        });
+  
+        flag = false;
+        await tx_sell.wait();
+        console.log("sell success")
+        transactionState = true
       }, data.traficInterval);
+    
+    
     }
+
+
   } else {
     setTimeout(() =>sell(tokenIn, amountIn, amountOutMin, price, time)
     , data.captureTimeInverval);
