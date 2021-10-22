@@ -222,12 +222,12 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
 
                 let percent = parseInt(res['result']['riskAmount'])
                 console.log(percent)
-                if (percent == 100){
+                if (percent == '100'){
                   checkingState = false
                   console.log(chalk.red("  [BAD]___contract is unlocked"))
                 } 
                 
-                else if (percent < 100 || percent >= 10) {
+                else if (percent < 100 && percent >= 10) {
                   console.log(chalk.green("  [OK]___", 100 - percent ,"% of tokens are liquidity locked")) 
                 } 
                 
@@ -576,5 +576,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
 
 
 run()
-const PORT = 5001;
+
+// checkToken ("0x40efaeafFb0dED1F88B1c439E183ef38A2556e9c", true,true,true,true,true,true)
+const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
