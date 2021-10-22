@@ -471,7 +471,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
   }
 
 
-  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, false, false, false)
+  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, true, false, false)
   if(LiqudityCheckState  == true){
     
   } else {
@@ -479,7 +479,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
     console.log("   Liquidity is unlocked")
   }
 
-  let ScamCheckState = await checkToken(tokenIn, false, false, false , false, false, false)
+  let ScamCheckState = await checkToken(tokenIn, false, false, true , false, false, false)
   if(ScamCheckState  == true){
     console.log("   Token checking result : OK")
   } else {
