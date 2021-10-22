@@ -46,6 +46,12 @@ const router = new ethers.Contract(
   account
 );
 
+
+
+//============================================================================
+//================ Run                             ===========================
+//============================================================================
+
 const run = async () => {
   let capturestate = true
   let tokenAddress
@@ -106,6 +112,10 @@ const run = async () => {
     }
   })
 }
+
+//============================================================================
+//================ check tokn                    =============================
+//============================================================================
 
 const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, liqudityLockCheck, honeypotCheck, taxCheck) => {
   
@@ -211,6 +221,7 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
               if (res['result']['status'] == 'success') {
 
                 let percent = parseInt(res['result']['riskAmount'])
+                console.log(percent)
                 if (percent == 100){
                   checkingState = false
                   console.log(chalk.red("  [BAD]___contract is unlocked"))
@@ -305,7 +316,7 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
 
 
 //============================================================================
-//============================================================================
+//============== buy token                                        ============
 //============================================================================
 const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
  
@@ -317,8 +328,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
 
 //==================check mode and balance
   if(data.buyMode == 'FIXED_MODE') {
-    if (walletBalance < data.AMOUNT_OF_WBNB * 1000000000000000000){
-      console.log(chalk.red("Please check wallet balance"))
+    if (walletBalance < data.AMOUNT_OF_WBNB * 1000000000000000000 + 2000000000000000){
+      console.log(chalk.red("Please check wallet balance Please Check transaction fee also"))
       return 
     } 
     else {
@@ -429,6 +440,9 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   }
 }
 
+//============================================================================
+//=================  sell token                            ===================
+//============================================================================
 const sell = async (tokenIn, amountIn, price, time) => {
   console.log("\n=========================start catching opportunity for sell ===========================")
   let flag = false
@@ -473,6 +487,11 @@ const sell = async (tokenIn, amountIn, price, time) => {
   try {
 
     if(flag){
+      walletBalance = parseInt(await provider.getBalance(data.recipient + ''));
+      if (walletBalance < 3000000000000000) {
+         console.log(chalk.red("there is no enough balance for sell"))
+         return
+      }
       if (transactionState == true) { 
         transactionState = false
         console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
@@ -543,18 +562,19 @@ const sell = async (tokenIn, amountIn, price, time) => {
       
       }
     } else {
-      setTimeout(() =>sell(tokenIn, amountIn, amountOutMin, price, time)
+      setTimeout(() =>sell(tokenIn, amountIn, price, time)
       , data.captureTimeInverval);
     }
   }catch(err){
     transactionState = true
   }
-
-
-
 }
 
 
+
+
+
+
 run()
-const PORT = 5000;
+const PORT = 5001;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
