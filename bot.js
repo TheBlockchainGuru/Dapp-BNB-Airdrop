@@ -51,7 +51,6 @@ const run = async () => {
   let tokenAddress
   let Liqudity_BNB_AMOUNT
   var checkingState = true
-  var checkingverify = true
   const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
   pairCreated.on('PairCreated', async (token0Addr, token1Addr, pairAddr, pairNums) => {
 
@@ -437,14 +436,16 @@ const sell = async (tokenIn, amountIn, price, time) => {
     console.log("   Hold time is not reached")
   }
 
-  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, false, false, false)
+
+  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, true, false, false)
   if(LiqudityCheckState  == true){
+    
   } else {
     flag = true
     console.log("   Liquidity is unlocked")
   }
 
-  let ScamCheckState = await checkToken(tokenIn, false, false, false , false, false, false)
+  let ScamCheckState = await checkToken(tokenIn, false, false, true , false, false, false)
   if(ScamCheckState  == true){
     console.log("   Token checking result : OK")
   } else {
@@ -532,6 +533,6 @@ const sell = async (tokenIn, amountIn, price, time) => {
 
 }
 
-run()
+checkToken('0x0Ce157C6edBDDCBa65C7D3e8F2c205774A4aaFC1',true,true,true,true,true,true)
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
