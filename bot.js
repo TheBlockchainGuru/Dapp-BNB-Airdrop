@@ -220,7 +220,7 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
               if (res['result']['status'] == 'success') {
 
                 let percent = parseInt(res['result']['riskAmount'])
-                console.log(percent)
+    
                 if (percent == '100'){
                   checkingState = false
                   console.log(chalk.red("  [BAD]___contract is unlocked"))
@@ -477,7 +477,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
     console.log("   Liquidity is unlocked")
   }
 
-  let ScamCheckState = await checkToken(tokenIn, false, false, true , false, false, false)
+  let ScamCheckState = await checkToken(tokenIn, false, false, false , false, false, false)
   if(ScamCheckState  == true){
     console.log("   Token checking result : OK")
   } else {
