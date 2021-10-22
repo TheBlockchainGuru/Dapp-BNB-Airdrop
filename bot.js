@@ -300,6 +300,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   let   amountIn
   walletBalance = parseInt(await provider.getBalance(data.recipient + ''));
 
+
+
 //==================check mode and balance
   if(data.buyMode == 'FIXED_MODE') {
     if (walletBalance < data.AMOUNT_OF_WBNB * 1000000000000000000){
@@ -337,7 +339,7 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
         console.log( "\n this is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
       }
       else if (data.buyMode == "PERCENT_MODE"){
-        console.log( "\n this is ", data.buyMode,"Pool liquidiay amount is ",Liqudity_BNB_AMOUNT/1000000000000000000, "BNB, Percent is", data.PERCENT_OF_WBNB," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
+        console.log( "\n this is ", data.buyMode,", Pool liquidiay amount is ",Liqudity_BNB_AMOUNT/1000000000000000000, "BNB, Percent is", data.PERCENT_OF_WBNB," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
       }
       const tx = await router.swapExactETHForTokens(
         amountOutMin,
@@ -364,11 +366,11 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                           console.log(chalk.red('Token Approve failed...'))
                                                         });
                                                         await approve.wait();
+                                                        let startTime = Math.floor(Date.now() / 1000)
                                                         console.log(chalk.green("Approve success"))
-                                                        let time = Math.round(+new Date()/1000);
-                                                        sell(tokenAddress, amountIn, amountOutMin, price, time)
-                                                        transactionState = true
-    } else { setTimeout( async() => {
+                                                        sell(tokenAddress, amountIn, price, startTime)
+    } 
+    else { setTimeout( async() => {
       transactionState = false
       console.log(chalk.green.inverse(`\n ======================Buying tokens=======================`));
       console.log( "\n Buy Mode is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
@@ -394,13 +396,18 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                           'gasPrice': ethers.utils.parseUnits(`${data.gasPrice}`, 'gwei'),
                                                         }).catch((err) => {
                                                           console.log(chalk.red('Token Approve failed...'))
+                                                          transactionState = true
                                                         });
-                                                        await approve.wait();
-                                                        console.log(chalk.green("Approve success"))
-                                                        let time = Math.round(+new Date()/1000);
-                                                        sell(tokenAddress, amountIn, price, time)
 
-                                                        transactionState = true
+
+
+                                                       
+                                                  
+                                                        await approve.wait();
+                                                        let startTime = Math.floor(Date.now() / 1000)
+                                                        console.log(chalk.green("Approve success"))
+                                                        sell(tokenAddress, amountIn, price, startTime)
+
     }, data.traficInterval);
     }
   }
@@ -411,7 +418,6 @@ const sell = async (tokenIn, amountIn, price, time) => {
   let flag = false
   let cur_amounts = await router.getAmountsOut(amountIn, [data.WBNB, tokenIn]);
   let cur_price = amountIn / cur_amounts[1];
-
 
   console.log (chalk.yellow("\n checking price profit"))
   if (cur_price > (price * data.profit / 100)) 
@@ -424,21 +430,21 @@ const sell = async (tokenIn, amountIn, price, time) => {
 
 
   console.log (chalk.yellow("\n checking hold time"))
-  if(Math.round(new Date()/1000) >= time + data.MaxHoldTime) {
+  if(Math.floor(Date.now() / 1000) >= time + data.MaxHoldTime) {
     flag = true
     console.log("   Hold time reached")
   } else {
     console.log("   Hold time is not reached")
   }
 
-  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, true, false, false)
+  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, false, false, false)
   if(LiqudityCheckState  == true){
   } else {
     flag = true
     console.log("   Liquidity is unlocked")
   }
 
-  let ScamCheckState = await checkToken(tokenIn, false, false, true , false, false, false)
+  let ScamCheckState = await checkToken(tokenIn, false, false, false , false, false, false)
   if(ScamCheckState  == true){
     console.log("   Token checking result : OK")
   } else {
@@ -461,8 +467,6 @@ const sell = async (tokenIn, amountIn, price, time) => {
 
 
       tokenAmount =await tokenContract.balanceOf(data.recipient);
-
-      console.log(tokenAmount / 1)
        const tx_sell = await router.swapExactTokensForETH(
         ethers.BigNumber.from(tokenAmount / 1+''),
         0,
@@ -479,7 +483,6 @@ const sell = async (tokenIn, amountIn, price, time) => {
       });
 
       flag = false;
-
       await tx_sell.wait();
       console.log("sell success")
       transactionState = true
@@ -487,7 +490,6 @@ const sell = async (tokenIn, amountIn, price, time) => {
     
     } 
     else {
-
       setTimeout(async() => {
         transactionState = false
         console.log(chalk.green.inverse(`\n ======================Selling tokens=======================`));
@@ -520,16 +522,16 @@ const sell = async (tokenIn, amountIn, price, time) => {
         transactionState = true
       }, data.traficInterval);
     
-    
     }
-
-
   } else {
     setTimeout(() =>sell(tokenIn, amountIn, amountOutMin, price, time)
     , data.captureTimeInverval);
   }
+
+
+
 }
 
-checkToken('0x0Ce157C6edBDDCBa65C7D3e8F2c205774A4aaFC1',true,true,true,true,true,true)
+run()
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
