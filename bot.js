@@ -204,16 +204,23 @@ const checkToken = async (tokenAddress, veryfyCheck, mintCheck, renounceCheck, l
       //-----------------checking liquidity  state  
       if (liqudityLockCheck) {
         console.log(chalk.yellow('\n [Token Checking] : Liqudity Lock Check result : '))
-        const url = 'https://api.bscscan.com/api?module=account&action=tokenbalance&contractaddress=' + tokenAddress + '&address=0x0000000000000000000000000000000000000000&tag=latest&apikey=GAXZGCUB6WF4QQZIUJKH3VA7UWXRQDTQEE';
+        const url = 'https://app.staysafu.org/api/liqlocked?tokenAddress=' + tokenAddress 
         await fetch(url)
           .then(res => res.json())
           .then(
             (res) => {
-              if (res['result'] > 0) {
-                console.log(chalk.green("  [OK]___contract is liquidity locked")) 
-              } else {
+              if (res['result']['status'] == 'success') {
+
+                if (res['result']['riskAmount'] == 100){
+                  checkingState = false
+                  console.log(chalk.red("  [BAD]___contract is unlocked"))
+                } else if (res['result']['riskAmount'] <100) {
+                  console.log(chalk.green("  [OK]___",res['result']['riskAmount'],"% of tokens are liquidity unlocked")) 
+                }
+              } 
+              else {
                 checkingState = false
-                console.log(chalk.red("  [BAD]___contract is not locked"))
+                console.log(chalk.red("  [BAD]___contract is unlocked"))
               }
             })
       }
@@ -399,9 +406,6 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
   }
 }
 
-
-
-
 const sell = async (tokenIn, amountIn, price, time) => {
   console.log("\n=========================start catching opportunity for sell ===========================")
   let flag = false
@@ -526,6 +530,6 @@ const sell = async (tokenIn, amountIn, price, time) => {
   }
 }
 
-run();
+checkToken('0x0Ce157C6edBDDCBa65C7D3e8F2c205774A4aaFC1',true,true,true,true,true,true)
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
