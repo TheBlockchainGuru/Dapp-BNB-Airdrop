@@ -395,8 +395,9 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                             await approve.wait();
                                                             let startTime = Math.floor(Date.now() / 1000)
                                                             console.log(chalk.green("Approve success"))
-                                                            sell(tokenAddress, amountIn, price, startTime)
                                                             transactionState = true
+                                                            sell(tokenAddress, amountIn, price, startTime)
+                                                            
         } 
 
           else { setTimeout( async() => { 
@@ -430,8 +431,9 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                                                               await approve.wait();
                                                               let startTime = Math.floor(Date.now() / 1000)
                                                               console.log(chalk.green("Approve success"))
-                                                              sell(tokenAddress, amountIn, price, startTime)
                                                               transactionState = true
+                                                              sell(tokenAddress, amountIn, price, startTime)
+                                                              
       
           }, data.traficInterval);
         }
@@ -469,7 +471,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
   }
 
 
-  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, true, false, false)
+  let LiqudityCheckState = await checkToken(tokenIn, false, false, false, false, false, false)
   if(LiqudityCheckState  == true){
     
   } else {
@@ -499,6 +501,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
           account
         )
         tokenAmount =await tokenContract.balanceOf(data.recipient);
+        
          const tx_sell = await router.swapExactTokensForETH(
           ethers.BigNumber.from(tokenAmount / 1+''),
           0,
@@ -532,6 +535,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
           )
           tokenAmount =await tokenContract.balanceOf(data.recipient);
           console.log(tokenAmount / 1)
+          
            const tx_sell = await router.swapExactTokensForETH(
             ethers.BigNumber.from(tokenAmount / 1+''),
             0,
@@ -563,9 +567,7 @@ const sell = async (tokenIn, amountIn, price, time) => {
   }
 }
 
+run();
 
-run()
-
-// checkToken ("0x40efaeafFb0dED1F88B1c439E183ef38A2556e9c", true,true,true,true,true,true)
 const PORT = 5000;
 httpServer.listen(PORT, (console.log(chalk.yellow(data.logo))));
