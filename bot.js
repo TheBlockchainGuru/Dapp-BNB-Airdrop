@@ -57,7 +57,14 @@ const run = async () => {
   let tokenAddress
   let Liqudity_BNB_AMOUNT
   var checkingState = true
-  const pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
+  const pairCreated
+  try{
+    pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
+  }catch(err){
+
+    return
+  }
+  
   pairCreated.on('PairCreated', async (token0Addr, token1Addr, pairAddr, pairNums) => {
     let pairAddress = pairAddr;
     if (pairAddress !== null && pairAddress !== undefined) {
@@ -71,7 +78,14 @@ const run = async () => {
       return;
     }
     let initialLiquidityDetected = false;
-    const pair = new ethers.Contract(pairAddress, ['event Sync(uint112 reserve1, uint112 reserve2)'], account);
+
+    const pair 
+    try{
+      pair = new ethers.Contract(pairAddress, ['event Sync(uint112 reserve1, uint112 reserve2)'], account);
+    }catch(err){
+      return
+    }
+
 //==============================================================================================================
 //============================================== detect add liqudity event =====================================
     try { 
