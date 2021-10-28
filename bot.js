@@ -329,8 +329,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       return 
     } 
     else {
-      amountIn =  ethers.BigNumber.from((data.AMOUNT_OF_WBNB * 1000000000000000000)+'')
-      console.log(chalk.green("there is enough balance")) 
+        amountIn =  parseInt(data.AMOUNT_OF_WBNB * 1000000000000000000)
+        console.log(chalk.green("there is enough balance")) 
     }
   }
 
@@ -339,20 +339,21 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
       console.log(chalk.red("Please check wallet balance"))
       return 
     } else {
-      amountIn = ethers.BigNumber.from(parseInt(Math.round(Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01))+'')
-      console.log(chalk.green("there is enough balance")) 
+      amountIn = parseInt(Math.round(Liqudity_BNB_AMOUNT * data.PERCENT_OF_WBNB * 0.01))
+      console.log(chalk.green("there is enough balance"))
     }
   } else {
     console.log(chalk.red("please check buy mode variable."))
   }
 
   try {
+
+    amountIn = ethers.BigNumber.from(parseInt(amountIn)+ '')
     const amounts = await router.getAmountsOut(amountIn, [tokenIn, tokenOut]);
     //=============================================================================
       const amountOutMin =  ethers.BigNumber.from(Math.round(amounts[1] * data.Slippage/ 100)+'');
       let price = amountIn / amountOutMin;
       if (botStatus === true) {
-
           console.log(chalk.green.inverse(`\n ======================Buying tokens=======================`));
           if (data.buyMode == "FIXED_MODE"){
             console.log( "\n this is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
@@ -360,7 +361,6 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
           else if (data.buyMode == "PERCENT_MODE"){
             console.log( "\n this is ", data.buyMode,", Pool liquidiay amount is ",Liqudity_BNB_AMOUNT/1000000000000000000, "BNB, Percent is", data.PERCENT_OF_WBNB," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
           }
-
           if (transactionState == true){
               transactionState = false
               try {
@@ -401,11 +401,9 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
                 return
               }                                                
           } 
-
           else { setTimeout( async() => { 
             transactionState = false
             try{
-
               console.log(chalk.green.inverse(`\n ======================Buying tokens=======================`));
               console.log( "\n Buy Mode is ", data.buyMode," will buy", amountOutMin /1 ,"token with ", amountIn/1000000000000000000,"BNB" )
               const tx = await router.swapExactETHForTokens(
@@ -444,7 +442,6 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
               console.log(chalk.red("buy failed"))
               transactionState = true
               return
-  
             }
           }, data.traficInterval);
         }
@@ -454,6 +451,8 @@ const buy = async(tokenAddress, Liqudity_BNB_AMOUNT) => {
     return
   }
 }
+
+
 
 //============================================================================
 //=================  sell token                            ===================
