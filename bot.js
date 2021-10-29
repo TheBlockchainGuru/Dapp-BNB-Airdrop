@@ -57,7 +57,7 @@ const run = async () => {
   let tokenAddress
   let Liqudity_BNB_AMOUNT
   var checkingState = true
-  const pairCreated
+  let pairCreated
   try{
     pairCreated = new ethers.Contract(data.factory, ['event PairCreated(address indexed token0, address indexed token1, address pair, uint pairNums)'], account);
   }catch(err){
@@ -79,7 +79,7 @@ const run = async () => {
     }
     let initialLiquidityDetected = false;
 
-    const pair 
+    let pair 
     try{
       pair = new ethers.Contract(pairAddress, ['event Sync(uint112 reserve1, uint112 reserve2)'], account);
     }catch(err){
